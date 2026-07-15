@@ -43,7 +43,6 @@
         .action-card { background: var(--bg-card); border-radius: 16px; padding: 15px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         .card-left { display: flex; align-items: center; gap: 15px; }
         
-        /* 📦 SVG CONTAINER UNTUK KARTU TABLET */
         .mini-img-icon { width: 45px; height: 45px; background: rgba(15, 23, 42, 0.4); border-radius: 10px; padding: 8px; box-sizing: border-box; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; }
         .mini-img-icon svg { width: 100%; height: 100%; fill: currentColor; }
         
@@ -56,13 +55,11 @@
         .lbl-status-delivered { font-size: 11px; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 6px 12px; border-radius: 8px; }
         .empty { text-align: center; color: var(--text-sub); padding: 35px 20px; font-weight: 700; font-size: 13px; border: 2px dashed var(--border); border-radius: 14px; }
 
-        .history-card { background: var(--bg-card); border-radius: 14px; padding: 15px; border: 1px solid var(--border); border-left: 5px solid #10b981; display: flex; justify-content: space-between; align-items: center; }
-        
         .nav-bottom { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 440px; background: var(--nav-bg); border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; padding: 10px 0; z-index: 99; }
         .nav-btn { background: none; border: none; color: var(--text-sub); font-weight: 800; font-size: 13px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .nav-btn.active { color: #38bdf8; }
 
-        /* ✨ GLOWING POP-UP GLASSMORPHISM UNTUK LAYAR TABLET */
+        /* ✨ GLOWING POP-UP GLASSMORPHISM */
         .overlay-popup { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(15px); z-index: 999; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         .overlay-popup.show { opacity: 1; pointer-events: auto; }
         
@@ -93,13 +90,10 @@
     <button class="sidebar-menu-item btn-danger-item" style="background:#ef4444; color:white; border:none;" onclick="logoutSistem()"><span>🚪</span> Log Out Platform</button>
 </div>
 
-<!-- ✨ PREMIUM POP-UP DISPLAY TABLET DENGAN TOMBOL SILANG -->
 <div id="popupOverlay" class="overlay-popup">
     <div class="popup-box" id="pBox">
-        <button class="btn-close-popup" onclick="tutupPopupManual()">×</button>
-        <div class="popup-icon-wrapper" id="popIconContainer">
-            <!-- Diisi dinamis via JS -->
-        </div>
+        <button class="btn-close-popup" onclick="window.tutupPopupManual()">×</button>
+        <div class="popup-icon-wrapper" id="popIconContainer"></div>
         <div id="pLabel" class="popup-badge-label">TUGAS MASUK</div>
         <h2 id="popFloorLine" style="font-size: 38px; font-weight: 900; margin: 5px 0; letter-spacing: -0.5px;">LINE --</h2>
         <div id="popFloorText" style="font-size: 14px; font-weight: 700; color: #38bdf8; margin-bottom: 10px;">Lantai --</div>
@@ -136,8 +130,8 @@
 <script>
     const socket = io('https://dhs-paragoncorp.up.railway.app');
     let activePopupId = null;
+    let popupTimeout = null;
 
-    // ✨ SVG ASSET MANDIRI ANTI-ES KRIM 🍦
     const svgIcons = {
         box: `<svg viewBox="0 0 24 24"><path d="M12 21.35l-8-4.63V7.28l8 4.63v9.44zm1-9.44l8-4.63v9.44l-8 4.63v-9.44zM12 2.65l7.65 4.42L12 11.49 4.35 7.07 12 2.65z"/></svg>`,
         trolley: `<svg viewBox="0 0 24 24"><path d="M19 16c.55 0 1-.45 1-1V5c0-.55-.45-1-1-1H7c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12zM6 20c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>`
@@ -153,71 +147,36 @@
         tutupSidebar();
     }
     function logoutSistem() { localStorage.clear(); window.location.href = 'login.html'; }
+    
     function clearDataMonitor() {
         tutupSidebar();
         if(confirm("Apakah Anda yakin ingin RESET ALL?")) fetch('https://dhs-paragoncorp.up.railway.app/api/request/reset-all', { method: 'POST' });
     }
+    
     function bukaTab(target) {
         document.getElementById('pageTugas').classList.remove('active'); document.getElementById('pageRiwayat').classList.remove('active');
         document.getElementById('btnTabTugas').classList.remove('active'); document.getElementById('btnTabRiwayat').classList.remove('active');
         if(target === 'tugas') { document.getElementById('pageTugas').classList.add('active'); document.getElementById('btnTabTugas').classList.add('active'); } 
         else { document.getElementById('pageRiwayat').classList.add('active'); document.getElementById('btnTabRiwayat').classList.add('active'); }
     }
-    function tutupPopupManual() { document.getElementById('popupOverlay').classList.remove('show'); activePopupId = null; }
 
-    function getMediaVisual(jenis) {
-        if(jenis === 'TROLI_BESAR') return { svg: svgIcons.trolley, text: 'TROLI BESAR', colorClass: 'text-blue-highlight' };
-        if(jenis === 'TROLI_KECIL') return { svg: svgIcons.trolley, text: 'TROLI KECIL', colorClass: 'text-green-highlight' };
-        return { svg: svgIcons.box, text: 'TARIK FG FULL', colorClass: 'text-orange-highlight' };
+    // 🎯 FIX ALARM/TIMER POP-UP MANUAL CLOSING
+    window.tutupPopupManual = function() { 
+        document.getElementById('popupOverlay').classList.remove('show'); 
+        activePopupId = null; 
+        if (popupTimeout) { clearTimeout(popupTimeout); popupTimeout = null; }
     }
 
-    function kirimTroliKeLift(id) { tutupPopupManual(); fetch('https://dhs-paragoncorp.up.railway.app/api/request/kirim-troli', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) }); }
-    function selesaikanTugas(id) { tutupPopupManual(); fetch('https://dhs-paragoncorp.up.railway.app/api/request/selesai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) }); }
+    function getMediaVisual(jenis) {
+        if(jenis === 'TROLI_BESAR') return { svg: svgIcons.trolley, text: 'TROLI BESAR' };
+        if(jenis === 'TROLI_KECIL') return { svg: svgIcons.trolley, text: 'TROLI KECIL' };
+        return { svg: svgIcons.box, text: 'TARIK FG FULL' };
+    }
 
-    socket.on('ANTREAN_BARU_MASUK', (data) => {
-        activePopupId = data.id; const pb = document.getElementById('pBox'); const btn = document.getElementById('popBtnSubmit');
-        const visual = getMediaVisual(data.jenisMedia);
-        
-        document.getElementById('popIconContainer').innerHTML = visual.svg;
-        document.getElementById('popFloorLine').innerText = data.line;
-        document.getElementById('popFloorText').innerText = `Zona Operasional: Lantai ${data.lantai}`;
-        document.getElementById('popFloorText').style.color = data.lantai == 2 ? '#a855f7' : '#38bdf8';
-        document.getElementById('popMedia').innerText = visual.text;
+    function kirimTroliKeLift(id) { window.tutupPopupManual(); fetch('https://dhs-paragoncorp.up.railway.app/api/request/kirim-troli', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) }); }
+    function selesaikanTugas(id) { window.tutupPopupManual(); fetch('https://dhs-paragoncorp.up.railway.app/api/request/selesai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) }); }
 
-        if(data.jenisMedia === 'FG_FULL') {
-            pb.className = "popup-box popup-fg"; document.getElementById('pLabel').innerText = "🚨 TARGET TARIK FG READY!";
-            btn.className = "btn-popup-action btn-green"; btn.innerText = "✓ SELESAI TARIK SEKARANG"; btn.setAttribute('onclick', `selesaikanTugas('${data.id}')`);
-        } else {
-            pb.className = "popup-box"; document.getElementById('pLabel').innerText = "📦 REQUEST PASOKAN TROLI!";
-            btn.className = "btn-popup-action btn-blue"; btn.innerText = "🛫 KIRIM KE LIFT"; btn.setAttribute('onclick', `kirimTroliKeLift('${data.id}')`);
-        }
-        document.getElementById('popupOverlay').classList.add('show');
-    });
-
-    socket.on('DATA_ANTREAN_UPDATE', (data) => {
-        const boxTroli = document.getElementById('listTroli'); const boxFG = document.getElementById('listFG');
-        document.getElementById('badgeCountTroli').innerText = data.troli.length; document.getElementById('badgeCountFG').innerText = data.fg.length;
-
-        boxTroli.innerHTML = data.troli.length === 0 ? `<div class="empty">🟢 Bersih, tidak ada request pasokan troli.</div>` : '';
-        data.troli.forEach(item => {
-            const visual = getMediaVisual(item.jenisMedia);
-            const div = document.createElement('div'); div.className = 'action-card';
-            let htmlKanan = item.status === 'DELIVERED' ? `<span class="lbl-status-delivered">DI LIFT 🛫</span>` : `<button class="btn-action btn-blue" onclick="kirimTroliKeLift('${item.id}')">KIRIM KE LIFT</button>`;
-            div.innerHTML = `<div class="card-left"><div class="mini-img-icon" style="color:#3b82f6;">${visual.svg}</div><div><h4>${item.line} <span style="font-size:11px; color:#38bdf8;">(Lant. ${item.lantai})</span></h4><p class="media-lbl">${visual.text}</p></div></div><div>${htmlKanan}</div>`;
-            boxTroli.appendChild(div);
-        });
-
-        boxFG.innerHTML = data.fg.length === 0 ? `<div class="empty">🟢 Bersih, tidak ada palet FG siap tarik.</div>` : '';
-        data.fg.forEach(item => {
-            const visual = getMediaVisual(item.jenisMedia);
-            const div = document.createElement('div'); div.className = 'action-card';
-            div.innerHTML = `<div class="card-left"><div class="mini-img-icon" style="color:#f59e0b;">${visual.svg}</div><div><h4>${item.line} <span style="font-size:11px; color:#f59e0b;">(Lant. ${item.lantai})</span></h4><p class="media-lbl">${visual.text}</p></div></div><button class="btn-action btn-green" onclick="selesaikanTugas('${item.id}')">SELESAI TARIK</button>`;
-            boxFG.appendChild(div);
-        });
-    });
-
-    let popupTimeout = null; // Menyimpan ID timer pop-up aktif
-
+    // 📣 LISTENER TUNGGAL ANTREAN MASUK (Pop-up Handheld)
     socket.on('ANTREAN_BARU_MASUK', (data) => {
         activePopupId = data.id; 
         const pb = document.getElementById('pBox'); 
@@ -235,25 +194,53 @@
             btn.className = "btn-popup-action btn-green"; btn.innerText = "✓ SELESAI TARIK SEKARANG"; btn.setAttribute('onclick', `selesaikanTugas('${data.id}')`);
         } else {
             pb.className = "popup-box"; document.getElementById('pLabel').innerText = "📦 REQUEST PASOKAN TROLI!";
-            btn.className = "btn-popup-action btn-blue"; btn.innerText = "🛫 KIRIM KE LIFT"; btn.setAttribute('onclick', `kirimTroliKeLift('${data.id}')`);
+            
+            // 🔥 VALIDASI POP-UP: Lantai 1 langsung Selesai Instan
+            if (data.lantai == 1) {
+                btn.className = "btn-popup-action btn-green"; btn.innerText = "✓ SELESAI SEKARANG"; btn.setAttribute('onclick', `selesaikanTugas('${data.id}')`);
+            } else {
+                btn.className = "btn-popup-action btn-blue"; btn.innerText = "🛫 KIRIM KE LIFT"; btn.setAttribute('onclick', `kirimTroliKeLift('${data.id}')`);
+            }
         }
         
         document.getElementById('popupOverlay').classList.add('show');
 
-        // ⏳ TIMER PINTAR 30 DETIK: Otomatis close jika didiamkan operator tablet
         if (popupTimeout) clearTimeout(popupTimeout);
-        popupTimeout = setTimeout(() => {
-            tutupPopupManual();
-            console.log("⏱️ Pop-up Tablet otomatis ditutup setelah 30 detik idle.");
-        }, 30000);
+        popupTimeout = setTimeout(() => { window.tutupPopupManual(); }, 30000);
     });
 
-    // Pastikan fungsi tutup manual di tablet juga menghapus detikan antrean
-    function tutupPopupManual() { 
-        document.getElementById('popupOverlay').classList.remove('show'); 
-        activePopupId = null; 
-        if (popupTimeout) { clearTimeout(popupTimeout); popupTimeout = null; }
-    }
+    // 📊 LISTENER DATA ANTREAN AKTIF DI TABLET HANDHELD
+    socket.on('DATA_ANTREAN_UPDATE', (data) => {
+        const boxTroli = document.getElementById('listTroli'); const boxFG = document.getElementById('listFG');
+        document.getElementById('badgeCountTroli').innerText = data.troli.length; document.getElementById('badgeCountFG').innerText = data.fg.length;
+
+        boxTroli.innerHTML = data.troli.length === 0 ? `<div class="empty">🟢 Bersih, tidak ada request pasokan troli.</div>` : '';
+        data.troli.forEach(item => {
+            const visual = getMediaVisual(item.jenisMedia);
+            const div = document.createElement('div'); div.className = 'action-card';
+            
+            // 🔥 LOGIKA BARU KONTROL TOMBOL TABLET LANTAI 1 VS LANTAI 2
+            let htmlKanan = '';
+            if (item.lantai == 1) {
+                // Lantai 1: Langsung tombol hijau SELESAI tanpa status lift
+                htmlKanan = `<button class="btn-action btn-green" onclick="selesaikanTugas('${item.id}')">SELESAI</button>`;
+            } else {
+                // Lantai 2: Normal, nunggu lift
+                htmlKanan = item.status === 'DELIVERED' ? `<span class="lbl-status-delivered">DI LIFT 🛫</span>` : `<button class="btn-action btn-blue" onclick="kirimTroliKeLift('${item.id}')">KIRIM KE LIFT</button>`;
+            }
+            
+            div.innerHTML = `<div class="card-left"><div class="mini-img-icon" style="color:#3b82f6;">${visual.svg}</div><div><h4>${item.line} <span style="font-size:11px; color:#38bdf8;">(Lant. ${item.lantai})</span></h4><p class="media-lbl">${visual.text}</p></div></div><div>${htmlKanan}</div>`;
+            boxTroli.appendChild(div);
+        });
+
+        boxFG.innerHTML = data.fg.length === 0 ? `<div class="empty">🟢 Bersih, tidak ada palet FG siap tarik.</div>` : '';
+        data.fg.forEach(item => {
+            const visual = getMediaVisual(item.jenisMedia);
+            const div = document.createElement('div'); div.className = 'action-card';
+            div.innerHTML = `<div class="card-left"><div class="mini-img-icon" style="color:#f59e0b;">${visual.svg}</div><div><h4>${item.line} <span style="font-size:11px; color:#f59e0b;">(Lant. ${item.lantai})</span></h4><p class="media-lbl">${visual.text}</p></div></div><button class="btn-action btn-green" onclick="selesaikanTugas('${item.id}')">SELESAI TARIK</button>`;
+            boxFG.appendChild(div);
+        });
+    });
 </script>
 </body>
 </html>
