@@ -156,10 +156,12 @@ io.on('connection', (socket) => {
     socket.emit('HISTORY_UPDATE', historyLog);
 });
 
-// Jalankan server di port 3000
-server.listen(3000, '0.0.0.0', () => {
+// Jalankan server di port yang disediakan Railway (PORT), fallback ke 3000 untuk lokal
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`=======================================================`);
     console.log(`🚀 DHS ENGINE V2.6 ONLINE - PRODUCTION GO-LIVE READY`);
     console.log(`🏢 ALL STATIONS ACTIVATED: ${Object.keys(MASTER_USER_DB).length - 3} PACKAGING LINES LINKED`);
+    console.log(`Listening on port ${PORT}`);
     console.log(`=======================================================`);
 });
