@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DHS v1.0 • ParagonCorp Gerbang Login Utama</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background: radial-gradient(circle at top left, #0f172a, #020617);
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 40px 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .logo-area h2 {
+            margin: 0;
+            font-size: 36px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            background: linear-gradient(45deg, #3b82f6, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-area p {
+            margin: 5px 0 30px 0;
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            box-sizing: border-box;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 14px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+        }
+
+        .btn-login {
+            width: 100%;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: #ffffff;
+            border: none;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 800;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            transition: all 0.2s;
+        }
+
+        .btn-login:active {
+            transform: scale(0.97);
+        }
+
+        .error-msg {
+            color: #ef4444;
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 15px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <div class="logo-area">
+        <h2>DHS</h2>
+        <p>Digital Handling System • ParagonCorp</p>
+    </div>
+
+    <div class="form-group">
+        <label for="username">ID Akun (Line / Jabatan)</label>
+        <input type="text" id="username" placeholder="Contoh: lip18, kfg_gudang, atau kfg_tv" autocomplete="off">
+    </div>
+
+    <div class="form-group">
+        <label for="password">Kata Sandi</label>
+        <input type="password" id="password" placeholder="Masukkan password...">
+    </div>
+
+    <div id="errorBox" class="error-msg">Username atau Password salah!</div>
+
+    <button class="btn-login" onclick="prosesLogin()">MASUK KE SISTEM</button>
+</div>
+
+<script>
+    // Bersihkan sesi lama secara total begitu mendarat di gerbang login
+    localStorage.clear();
+    sessionStorage.clear();
+
+    function prosesLogin() {
+        const userVal = document.getElementById('username').value.trim();
+        const passVal = document.getElementById('password').value;
+        const errorBox = document.getElementById('errorBox');
+
+        if (!userVal || !passVal) {
+            errorBox.innerText = "Semua kolom wajib diisi!";
+            errorBox.style.display = "block";
+            return;
+        }
+
+        fetch('http://localhost:3000/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: userVal, password: passVal })
+        })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error("Akun tidak terdaftar atau password salah!");
+            }
+            return res.json();
+        })
+        .then(resData => {
+            if (resData.success) {
+                // Kunci identitas ke memori lokal browser
+                localStorage.setItem('dhs_user', JSON.stringify(resData.data));
+                
+                // Distribusi alur halaman berdasarkan role
+                const role = resData.data.role;
+                if (role === 'OPERATOR') {
+                    window.location.href = 'operator.html';
+                } else if (role === 'KFG') {
+                    window.location.href = 'tab-kfg.html';
+                } else if (role === 'TV') {
+                    window.location.href = 'dashboard-kfg.html';
+                } else if (role === 'ADMIN') {
+                    window.location.href = 'data-center.html';
+                }
+            } else {
+                errorBox.innerText = "Gagal memproses hak akses login!";
+                errorBox.style.display = "block";
+            }
+        })
+        .catch(err => {
+            errorBox.innerText = err.message || "Gagal terhubung ke server backend!";
+            errorBox.style.display = "block";
+        });
+    }
+
+    document.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            prosesLogin();
+        }
+    });
+</script>
+</body>
+</html>

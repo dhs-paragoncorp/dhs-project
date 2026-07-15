@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DHS v1.0 • Data Center & Riwayat</title>
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background: radial-gradient(circle at top left, #121B33, #080D1A);
+            color: #ffffff;
+            margin: 0;
+            padding: 30px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        
+        .data-container {
+            width: 100%;
+            max-width: 1100px;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(45deg, #00B4DB, #8d99ae);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .btn-export {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            font-weight: 700;
+            font-size: 13px;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
+            transition: 0.2s;
+            letter-spacing: 0.5px;
+        }
+        .btn-export:hover { box-shadow: 0 0 20px rgba(16, 185, 129, 0.45); }
+        .btn-export:active { transform: scale(0.96); }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(15, 23, 42, 0.4);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+        
+        thead tr {
+            background: rgba(255, 255, 255, 0.02);
+            color: #00B4DB;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        th, td {
+            padding: 16px 20px;
+        }
+        
+        tbody tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            transition: 0.2s;
+        }
+        
+        tbody tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.01);
+        }
+        
+        .badge-floor {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .b-l1 { background: rgba(0, 180, 219, 0.15); color: #00B4DB; }
+        .b-l2 { background: rgba(56, 239, 125, 0.15); color: #38ef7d; }
+        .b-l3 { background: rgba(230, 126, 34, 0.15); color: #e67e22; }
+
+        .empty-history {
+            text-align: center;
+            padding: 40px;
+            color: #64748B;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="data-container">
+    <div class="header">
+        <div>
+            <h2>DHS v1.0 • DATA CENTER</h2>
+            <div style="font-size: 12px; color: #64748B; font-weight: 600; margin-top: 4px;">📜 TAB RIWAYAT & LAPORAN PRODUKSI</div>
+        </div>
+        <button class="btn-export" onclick="tarikDataExcel()">📥 TARIK DATA (CSV)</button>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Waktu Panggil</th>
+                    <th>Waktu Kelar</th>
+                    <th>Lokasi</th>
+                    <th>Jenis Media</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="historyTableBody">
+                <tr>
+                    <td colspan="5" class="empty-history">Belum ada riwayat aktivitas hari ini.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const socket = io('http://localhost:3000');
+    let lokalHistory = [];
+
+    function getMediaText(jenisMedia) {
+        if(jenisMedia === 'TROLI_BESAR') return '📦 PALLET WAREHOUSE';
+        if(jenisMedia === 'TROLI_KECIL') return '🛒 Troli Kecil';
+        return '🚨 Kirim FG Full';
+    }
+
+    // Fungsi menggambar ulang tabel riwayat berdasarkan data dari server
+    function renderTable(historyData) {
+        lokalHistory = historyData;
+        const tbody = document.getElementById('historyTableBody');
+        tbody.innerHTML = '';
+
+        if(historyData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="empty-history">Belum ada riwayat aktivitas hari ini.</td></tr>`;
+            return;
+        }
+
+        historyData.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-family: monospace; color: #94A3B8;">${item.waktu}</td>
+                <td style="font-family: monospace; color: #10b981;">${item.waktuSelesai || '-'}</td>
+                <td><span class="badge-floor b-l${item.lantai}">L${item.lantai}</span> <strong>${item.line}</strong></td>
+                <td style="color: #F1F5F9; font-weight: 600;">${getMediaText(item.jenisMedia)}</td>
+                <td><span style="color: #38ef7d; font-weight: 700;">🟢 SELESAI</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // 🔥 PENGUBUNG UTAMA: Menangkap log riwayat dari server secara real-time
+    socket.on('HISTORY_UPDATE', (historyData) => {
+        renderTable(historyData);
+    });
+
+    // Fitur unduh file laporan untuk Excel
+    function tarikDataExcel() {
+        if(lokalHistory.length === 0) {
+            alert("Tidak ada data riwayat yang bisa ditarik!");
+            return;
+        }
+
+        // Header CSV dengan separator titik koma (;) agar otomatis rapi saat dibuka di Excel regional Indonesia
+        let csvContent = "data:text/csv;charset=utf-8,Waktu Panggil;Waktu Kelar;Lantai;Line;Jenis Media;Status\n";
+        
+        lokalHistory.forEach(row => {
+            csvContent += `"${row.waktu}";"${row.waktuSelesai || '-'}";"Lantai ${row.lantai}";"${row.line}";"${row.jenisMedia}";"SELESAI"\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `DHS_Laporan_QLT_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+</body>
+</html>

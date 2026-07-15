@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DHS v1.0 • Dashboard KFG TV Premium</title>
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <style>
+        :root {
+            --bg-body: radial-gradient(circle at top, #0f172a, #020617);
+            --bg-container: rgba(30, 41, 59, 0.25);
+            --border: rgba(255, 255, 255, 0.04);
+            --text-main: #ffffff; --text-sub: #94a3b8;
+            --card-bg: #1e293b; --card-border: #334155;
+            --nav-bg: #1e293b; --sidebar-bg: #0f172a;
+        }
+        [data-theme="light"] {
+            --bg-body: linear-gradient(to bottom, #f4f6f9, #e2e8f0);
+            --bg-container: #ffffff;
+            --border: #cbd5e1;
+            --text-main: #0f172a; --text-sub: #64748b;
+            --card-bg: #ffffff; --card-border: #cbd5e1;
+            --nav-bg: #ffffff; --sidebar-bg: #ffffff;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-body); color: var(--text-main); margin: 0; padding: 25px 25px 85px 25px; min-height: 100vh; transition: 0.3s; box-sizing: border-box; overflow-x: hidden; }
+        .monitor-container { width: 100%; max-width: 1250px; margin: 0 auto; background: var(--bg-container); backdrop-filter: blur(20px); border-radius: 24px; border: 1px solid var(--border); padding: 25px; box-shadow: 0 30px 70px rgba(0,0,0,0.4); }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px; }
+        .header-title-area { display: flex; align-items: center; gap: 20px; }
+        .menu-toggle-btn { background: none; border: none; color: var(--text-main); font-size: 32px; cursor: pointer; padding: 0; }
+        .time-display { text-align: right; font-size: 32px; font-family: monospace; font-weight: 900; }
+        
+        /* ☰ SIDEBAR CONTROL PANEL */
+        .sidebar-drawer { position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; background-color: var(--sidebar-bg); border-right: 1px solid var(--card-border); box-shadow: 25px 0 60px rgba(0,0,0,0.4); z-index: 999; display: flex; flex-direction: column; padding: 35px 25px; box-sizing: border-box; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar-drawer.open { left: 0; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 998; display: none; }
+        .sidebar-overlay.show { display: block; }
+        .sidebar-header { font-size: 12px; font-weight: 800; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 30px; }
+        .sidebar-menu-item { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-main); padding: 16px; border-radius: 14px; font-weight: 700; font-size: 14px; text-align: left; cursor: pointer; margin-bottom: 15px; display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; }
+        .btn-danger-item { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: #ef4444; }
+
+        /* STATS RINGKASAN DUA BARIS LANTAI */
+        .stats-two-rows { display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px; }
+        .stats-floor-row { display: grid; grid-template-columns: 100px 1fr 1fr 1fr; gap: 12px; align-items: center; background: rgba(15, 23, 42, 0.25); padding: 10px 15px; border-radius: 16px; border: 1px solid var(--border); }
+        .floor-label-tag { font-size: 14px; font-weight: 900; text-transform: uppercase; color: #38bdf8; letter-spacing: 0.5px; }
+        
+        .stat-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 10px 15px; display: flex; align-items: center; gap: 12px; }
+        .stat-icon { font-size: 18px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .stat-info p { margin: 0; font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; }
+        .stat-info h3 { margin: 1px 0 0 0; font-size: 20px; font-weight: 900; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: flex; flex-direction: column; gap: 25px; }
+
+        .column-section { background: rgba(15, 23, 42, 0.15); border: 1px solid var(--border); border-radius: 20px; padding: 20px; }
+        .column-header { font-size: 16px; font-weight: 900; letter-spacing: 1px; padding-bottom: 12px; margin-bottom: 20px; border-bottom: 2px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+        
+        .list-cards { display: flex; flex-direction: column; gap: 14px; }
+        .request-card { background: var(--card-bg); border-radius: 18px; padding: 20px; border: 1px solid var(--card-border); display: flex; align-items: center; justify-content: space-between; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        
+        .card-troli-bes { border-left: 8px solid #3b82f6; }
+        .card-troli-kec { border-left: 8px solid #10b981; }
+        .card-fg-style { border-left: 8px solid #f59e0b; }
+
+        .card-content-left { display: flex; align-items: center; gap: 24px; }
+        .giant-media-icon { min-width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.5); border-radius: 14px; padding: 12px; box-sizing: border-box; border: 1px solid var(--border); }
+        .giant-media-icon svg { width: 100%; height: 100%; fill: currentColor; }
+        
+        .card-text-details h4 { margin: 0; font-size: 28px; font-weight: 900; }
+        .text-blue-highlight { color: #3b82f6; }
+        .text-green-highlight { color: #10b981; }
+        .text-orange-highlight { color: #f59e0b; }
+        .card-text-details p { margin: 4px 0 0 0; font-size: 14px; color: var(--text-sub); font-weight: 700; }
+        
+        .card-content-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+        .timer-box { background: #0f172a; color: #ffb020; padding: 8px 16px; border-radius: 10px; font-family: monospace; font-size: 18px; font-weight: 900; }
+        
+        .status-badge { display: inline-block; font-size: 11px; font-weight: 900; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; }
+        .badge-wait { background: #d97706; color: white; }
+        .badge-deliv { background: #10b981; color: white; animation: blink 1s infinite alternate; }
+        @keyframes blink { from { opacity: 0.6; } to { opacity: 1; } }
+
+        .empty-state { text-align: center; padding: 40px 0; color: #64748b; font-size: 14px; font-weight: 700; border: 2px dashed var(--card-border); border-radius: 18px; }
+
+        .nav-bottom { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--nav-bg); border: 1px solid var(--card-border); border-bottom: none; border-radius: 16px 16px 0 0; display: grid; grid-template-columns: 1fr 1fr; padding: 12px 0; z-index: 99; }
+        .nav-btn { background: none; border: none; color: var(--text-sub); font-weight: 800; font-size: 14px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .nav-btn.active { color: #38bdf8; }
+
+        /* ✨ POP-UP MODERASI MEWAH & PREMIUM (GLASSMORPHISM & GLOW EFFECT) */
+        .overlay-popup { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(25px); z-index: 999; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .overlay-popup.show { opacity: 1; pointer-events: auto; }
+        
+        .popup-box { position: relative; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid rgba(59, 130, 246, 0.4); box-shadow: 0 0 60px rgba(59, 130, 246, 0.25), inset 0 1px 1px rgba(255,255,255,0.1); border-radius: 36px; padding: 50px 40px; text-align: center; color: white; width: 90%; max-width: 500px; transform: scale(0.85); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .overlay-popup.show .popup-box { transform: scale(1); }
+        
+        /* Tema Warna Khusus untuk Kebutuhan Outbound (FG) */
+        .popup-fg { border-color: rgba(245, 158, 11, 0.5) !important; box-shadow: 0 0 60px rgba(245, 158, 11, 0.25), inset 0 1px 1px rgba(255,255,255,0.1) !important; }
+        
+        .btn-close-popup { position: absolute; top: 20px; right: 25px; font-size: 36px; color: #64748b; cursor: pointer; background: none; border: none; font-weight: 300; transition: 0.2s; }
+        .btn-close-popup:hover { color: #ef4444; transform: rotate(90deg); }
+        
+        /* Container Icon Pro Logistik */
+        .popup-icon-wrapper { width: 100px; height: 100px; margin: 0 auto 20px auto; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 28px; display: flex; align-items: center; justify-content: center; padding: 22px; box-sizing: border-box; color: #3b82f6; }
+        .popup-fg .popup-icon-wrapper { color: #f59e0b; }
+        .popup-icon-wrapper svg { width: 100%; height: 100%; fill: currentColor; }
+
+        .popup-badge-label { display: inline-block; font-size: 11px; font-weight: 900; background: rgba(59, 130, 246, 0.15); color: #38bdf8; padding: 6px 16px; border-radius: 99px; letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 15px; border: 1px solid rgba(59, 130, 246, 0.2); }
+        .popup-fg .popup-badge-label { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.2); }
+    </style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="tutupSidebar()"></div>
+<div class="sidebar-drawer" id="sidebarDrawer">
+    <div class="sidebar-header">⚙️ DHS SYSTEM CONTROL PANEL</div>
+    <button class="sidebar-menu-item" onclick="toggleTheme()">🌓 Switch Light Mode</button>
+    <button class="sidebar-menu-item btn-danger-item" onclick="clearDataHantu()">🧹 Clear Data Monitor (Reset)</button>
+    <div style="flex-grow:1;"></div>
+    <button class="sidebar-menu-item btn-danger-item" style="background:#ef4444; color:white; border:none;" onclick="logoutSistem()">🚪 Log Out Platform</button>
+</div>
+
+<div id="popupOverlay" class="overlay-popup">
+    <div class="popup-box" id="popupBox">
+        <button class="btn-close-popup" onclick="tutupPopupManual()">×</button>
+        <div class="popup-icon-wrapper" id="popIconContainer">
+            </div>
+        <div class="popup-badge-label" id="popLabel">REQUEST INBOUND</div>
+        <h2 id="popFloorLine" style="font-size: 52px; font-weight: 900; margin: 0px 0 8px 0; letter-spacing: -1px; line-height: 1;">LINE --</h2>
+        <div id="popFloorText" style="font-size: 16px; font-weight: 700; color: #38bdf8; margin-bottom: 20px;">Lantai --</div>
+        <div id="popMedia" style="font-size: 26px; font-weight: 800; color: #f1f5f9; margin-bottom: 25px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">TROLI BESAR</div>
+        <div id="popTime" style="font-size: 13px; color: #64748b; font-family: monospace; letter-spacing: 0.5px;">Waktu Kirim: --:--:-- WIB</div>
+    </div>
+</div>
+
+<div class="monitor-container">
+    <div class="header">
+        <div class="header-title-area">
+            <button class="menu-toggle-btn" onclick="bukaSidebar()">☰</button>
+            <div>
+                <h1 style="margin:0; font-size:26px; font-weight:900;">DHS • DASHBOARD KFG</h1>
+                <p style="margin:4px 0 0 0; font-size:12px; color:var(--text-sub); font-weight:600;">ParagonCorp Production Real-time Control Screen</p>
+            </div>
+        </div>
+        <div class="time-display"><span id="clock">00:00:00</span></div>
+    </div>
+
+    <div class="stats-two-rows">
+        <div class="stats-floor-row">
+            <div class="floor-label-tag" style="color:#38bdf8;">Lantai 1</div>
+            <div class="stat-card"><div class="stat-icon" style="color:#3b82f6;">⏳</div><div class="stat-info"><p>Antrean Troli</p><h3 id="statTroliLnt1">0</h3></div></div>
+            <div class="stat-card"><div class="stat-icon" style="color:#f59e0b;">🚨</div><div class="stat-info"><p>Antrean FG</p><h3 id="statFGLnt1">0</h3></div></div>
+            <div class="stat-card"><div class="stat-icon" style="color:#10b981;">✓</div><div class="stat-info"><p>Total Selesai</p><h3 id="statDoneLnt1">0</h3></div></div>
+        </div>
+        <div class="stats-floor-row">
+            <div class="floor-label-tag" style="color:#a855f7;">Lantai 2</div>
+            <div class="stat-card"><div class="stat-icon" style="color:#3b82f6;">⏳</div><div class="stat-info"><p>Antrean Troli</p><h3 id="statTroliLnt2">0</h3></div></div>
+            <div class="stat-card"><div class="stat-icon" style="color:#f59e0b;">🚨</div><div class="stat-info"><p>Antrean FG</p><h3 id="statFGLnt2">0</h3></div></div>
+            <div class="stat-card"><div class="stat-icon" style="color:#10b981;">✓</div><div class="stat-info"><p>Total Selesai</p><h3 id="statDoneLnt2">0</h3></div></div>
+        </div>
+    </div>
+
+    <div id="tabMonitor" class="tab-content active">
+        <div class="column-section">
+            <div class="column-header"><span style="color:#38bdf8;">📦 KEBUTUHAN TROLI (INBOUND)</span><span style="color:#3b82f6; font-size:12px; font-weight:800;" id="countTroli">0 Aktif</span></div>
+            <div class="list-cards" id="containerTroli"><div class="empty-state">🟢 JALUR AMAN: Tidak ada antrean pasokan troli.</div></div>
+        </div>
+        <div class="column-section">
+            <div class="column-header"><span style="color:#f59e0b;">🚨 TARIK FG FULL (OUTBOUND)</span><span style="color:#f59e0b; font-size:12px; font-weight:800;" id="countFG">0 Aktif</span></div>
+            <div class="list-cards" id="containerFG"><div class="empty-state">🟢 POKAYOKE: Belum ada palet FG siap tarik.</div></div>
+        </div>
+    </div>
+
+    <div id="tabRiwayat" class="tab-content">
+        <div class="column-section">
+            <div class="column-header" style="color:#10b981;">📜 LOG RIWAYAT SELESAI HARI INI</div>
+            <div class="list-cards" id="containerRiwayat"><div class="empty-state">Belum ada riwayat pemindahan tugas hari ini.</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="nav-bottom">
+    <button class="nav-btn active" id="btnTabMonitor" onclick="gantiTab('monitor')">📋 Monitor Aktif</button>
+    <button class="nav-btn" id="btnTabRiwayat" onclick="gantiTab('riwayat')">📜 Riwayat Selesai Log</button>
+</div>
+
+<script>
+    const socket = io('http://localhost:3000');
+    const activeTimers = {};
+    let audioCtx = null, alarmInterval = null;
+
+    // ✨ SVG INLINE LOGISTIK BERSIH ANTI ES KRIM 🍦
+    const svgIcons = {
+        box: `<svg viewBox="0 0 24 24"><path d="M12 21.35l-8-4.63V7.28l8 4.63v9.44zm1-9.44l8-4.63v9.44l-8 4.63v-9.44zM12 2.65l7.65 4.42L12 11.49 4.35 7.07 12 2.65z"/></svg>`,
+        trolley: `<svg viewBox="0 0 24 24"><path d="M19 16c.55 0 1-.45 1-1V5c0-.55-.45-1-1-1H7c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12zM6 20c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>`
+    };
+
+    setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString('id-ID'); }, 1000);
+    function bukaSidebar() { document.getElementById('sidebarDrawer').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('show'); }
+    function tutupSidebar() { document.getElementById('sidebarDrawer').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); }
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const targetTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', targetTheme);
+        tutupSidebar();
+    }
+    function logoutSistem() { localStorage.clear(); window.location.href = 'login.html'; }
+    function gantiTab(target) {
+        document.getElementById('tabMonitor').classList.remove('active'); document.getElementById('tabRiwayat').classList.remove('active');
+        document.getElementById('btnTabMonitor').classList.remove('active'); document.getElementById('btnTabRiwayat').classList.remove('active');
+        if(target === 'monitor') { document.getElementById('tabMonitor').classList.add('active'); document.getElementById('btnTabMonitor').classList.add('active'); } 
+        else { document.getElementById('tabRiwayat').classList.add('active'); document.getElementById('btnTabRiwayat').classList.add('active'); }
+    }
+    function clearDataHantu() {
+        tutupSidebar();
+        if(confirm("Apakah Anda yakin ingin RESET TOTAL semua antrean sisa trial di server?")) {
+            fetch('http://localhost:3000/api/request/reset-all', { method: 'POST' });
+        }
+    }
+    function tutupPopupManual() { document.getElementById('popupOverlay').classList.remove('show'); alarmMati(); }
+
+    function startTimer(id, waktuEpoch) {
+        if(activeTimers[id]) clearInterval(activeTimers[id]);
+        activeTimers[id] = setInterval(() => {
+            const selisih = Math.floor((Date.now() - waktuEpoch) / 1000);
+            const el = document.getElementById(`timer-${id}`);
+            if(el) el.innerText = `⏳ ${String(Math.floor(selisih / 60)).padStart(2, '0')}:${String(selisih % 60).padStart(2, '0')}`;
+        }, 1000);
+    }
+
+    function getMediaVisual(jenis) {
+        if(jenis === 'TROLI_BESAR') return { svg: svgIcons.trolley, text: 'TROLI BESAR', classColor: 'text-blue-highlight', styleCard: 'card-troli-bes' };
+        if(jenis === 'TROLI_KECIL') return { svg: svgIcons.trolley, text: 'TROLI KECIL', classColor: 'text-green-highlight', styleCard: 'card-troli-kec' };
+        return { svg: svgIcons.box, text: 'TARIK FG FULL', classColor: 'text-orange-highlight', styleCard: 'card-fg-style' };
+    }
+
+    function alarmBunyi() {
+        alarmMati();
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        alarmInterval = setInterval(() => {
+            let osc = audioCtx.createOscillator(); let g = audioCtx.createGain();
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(550, audioCtx.currentTime);
+            g.gain.setValueAtTime(0.12, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+            osc.connect(g); g.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+        }, 600);
+    }
+    function alarmMati() { if(alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; } }
+
+    socket.on('ANTREAN_BARU_MASUK', (data) => {
+        const pBox = document.getElementById('popupBox');
+        const visual = getMediaVisual(data.jenisMedia);
+        
+        document.getElementById('popIconContainer').innerHTML = visual.svg;
+        document.getElementById('popFloorLine').innerText = data.line;
+        document.getElementById('popFloorText').innerText = `Zona Operasional: Lantai ${data.lantai}`;
+        document.getElementById('popFloorText').style.color = data.lantai == 2 ? '#a855f7' : '#38bdf8';
+        document.getElementById('popMedia').innerText = visual.text;
+        document.getElementById('popTime').innerText = `Waktu Kirim: ${data.waktu} WIB`;
+
+        if(data.jenisMedia === 'FG_FULL') { 
+            pBox.className = "popup-box popup-fg"; 
+            document.getElementById('popLabel').innerText = "🚨 TARGET TARIK FG"; 
+        } else { 
+            pBox.className = "popup-box"; 
+            document.getElementById('popLabel').innerText = "📦 REQUEST PASOKAN TROLI"; 
+        }
+        document.getElementById('popupOverlay').classList.add('show');
+        alarmBunyi();
+    });
+    
+    socket.on('DATA_ANTREAN_UPDATE', (data) => {
+        const cTroli = document.getElementById('containerTroli'); const cFG = document.getElementById('containerFG');
+        
+        const troliLnt1 = data.troli.filter(item => item.lantai == 1).length;
+        const troliLnt2 = data.troli.filter(item => item.lantai == 2).length;
+        const fgLnt1 = data.fg.filter(item => item.lantai == 1).length;
+        const fgLnt2 = data.fg.filter(item => item.lantai == 2).length;
+
+        document.getElementById('statTroliLnt1').innerText = troliLnt1;
+        document.getElementById('statTroliLnt2').innerText = troliLnt2;
+        document.getElementById('statFGLnt1').innerText = fgLnt1;
+        document.getElementById('statFGLnt2').innerText = fgLnt2;
+
+        cTroli.innerHTML = data.troli.length === 0 ? `<div class="empty-state">🟢 JALUR AMAN: Tidak ada antrean pasokan troli.</div>` : '';
+        data.troli.forEach(item => {
+            const visual = getMediaVisual(item.jenisMedia);
+            cTroli.innerHTML += `<div class="request-card ${visual.styleCard}"><div class="card-content-left"><div class="giant-media-icon ${visual.classColor}">${visual.svg}</div><div class="card-text-details"><h4 class="${visual.classColor}">${item.line}</h4><p>Minta: <b>${visual.text}</b> (Lantai ${item.lantai})</p></div></div><div class="card-content-right"><div class="timer-box" id="timer-${item.id}">⏳ 00:00</div><span class="status-badge ${item.status==='DELIVERED'?'badge-deliv':'badge-wait'}">${item.status}</span></div></div>`;
+            startTimer(item.id, item.waktuEpoch);
+        });
+        
+        cFG.innerHTML = data.fg.length === 0 ? `<div class="empty-state">🟢 POKAYOKE: Belum ada palet FG siap tarik.</div>` : '';
+        data.fg.forEach(item => {
+            const visual = getMediaVisual(item.jenisMedia);
+            cFG.innerHTML += `<div class="request-card ${visual.styleCard}"><div class="card-content-left"><div class="giant-media-icon ${visual.classColor}">${visual.svg}</div><div class="card-text-details"><h4 class="${visual.classColor}">${item.line}</h4><p>Target: <b>${visual.text}</b> (Lantai ${item.lantai})</p></div></div><div class="card-content-right"><div class="timer-box" id="timer-${item.id}">⏳ 00:00</div><span class="status-badge badge-wait">WAITING KFG</span></div></div>`;
+            startTimer(item.id, item.waktuEpoch);
+        });
+        
+        document.getElementById('countTroli').innerText = `${data.troli.length} Aktif`;
+        document.getElementById('countFG').innerText = `${data.fg.length} Aktif`;
+    });
+
+    let popupTimeout = null; // Menyimpan ID timer pop-up aktif
+
+    socket.on('ANTREAN_BARU_MASUK', (data) => {
+        const pBox = document.getElementById('popupBox');
+        const visual = getMediaVisual(data.jenisMedia);
+        
+        document.getElementById('popIconContainer').innerHTML = visual.svg;
+        document.getElementById('popFloorLine').innerText = data.line;
+        document.getElementById('popFloorText').innerText = `Zona Operasional: Lantai ${data.lantai}`;
+        document.getElementById('popFloorText').style.color = data.lantai == 2 ? '#a855f7' : '#38bdf8';
+        document.getElementById('popMedia').innerText = visual.text;
+        document.getElementById('popTime').innerText = `Waktu Kirim: ${data.waktu} WIB`;
+
+        if(data.jenisMedia === 'FG_FULL') { 
+            pBox.className = "popup-box popup-fg"; 
+            document.getElementById('popLabel').innerText = "🚨 TARGET TARIK FG"; 
+        } else { 
+            pBox.className = "popup-box"; 
+            document.getElementById('popLabel').innerText = "📦 REQUEST PASOKAN TROLI"; 
+        }
+        
+        document.getElementById('popupOverlay').classList.add('show');
+        alarmBunyi();
+
+        // ⏳ TIMER PINTAR 30 DETIK: Bersihkan sisa timer lama dulu agar tidak bentrok
+        if (popupTimeout) clearTimeout(popupTimeout);
+        popupTimeout = setTimeout(() => {
+            tutupPopupManual();
+            console.log("⏱️ Pop-up TV otomatis ditutup setelah 30 detik idle.");
+        }, 30000); 
+    });
+
+    // Pastikan fungsi tutup manual juga ikut membersihkan sisa detikan timer
+    function tutupPopupManual() { 
+        document.getElementById('popupOverlay').classList.remove('show'); 
+        alarmMati(); 
+        if (popupTimeout) { clearTimeout(popupTimeout); popupTimeout = null; }
+    }
+</script>
+</body>
+</html>
