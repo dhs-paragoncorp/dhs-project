@@ -59,24 +59,31 @@
         .nav-btn { background: none; border: none; color: var(--text-sub); font-weight: 800; font-size: 13px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .nav-btn.active { color: #38bdf8; }
 
-        /* ✨ GLOWING POP-UP GLASSMORPHISM */
-        .overlay-popup { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(15px); z-index: 999; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        .overlay-popup.show { opacity: 1; pointer-events: auto; }
+        /* 💬 FLOATING WHATSAPP-STYLE NOTIFICATION BANNER */
+        .overlay-popup { position: fixed; top: -120px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 400px; z-index: 1000; opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .overlay-popup.show { top: 20px; opacity: 1; pointer-events: auto; }
         
-        .popup-box { position: relative; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid rgba(59, 130, 246, 0.4); box-shadow: 0 0 40px rgba(59, 130, 246, 0.2), inset 0 1px 1px rgba(255,255,255,0.1); border-radius: 28px; padding: 40px 24px; width: 85%; max-width: 350px; text-align: center; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        .overlay-popup.show .popup-box { transform: scale(1); }
-        .popup-fg { border-color: rgba(245, 158, 11, 0.5) !important; box-shadow: 0 0 40px rgba(245, 158, 11, 0.2), inset 0 1px 1px rgba(255,255,255,0.1) !important; }
+        .popup-box { background: #1e293b; border: 1.5px solid rgba(255, 255, 255, 0.15); border-left: 6px solid #2563eb; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 16px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; position: relative; }
+        .popup-fg { border-left-color: #f59e0b !important; }
         
-        .btn-close-popup { position: absolute; top: 12px; right: 18px; font-size: 30px; color: #64748b; cursor: pointer; background: none; border: none; font-weight: 300; line-height: 1; }
-        .btn-close-popup:hover { color: #ef4444; }
-        
-        .popup-icon-wrapper { width: 80px; height: 80px; margin: 0 auto 15px auto; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; display: flex; align-items: center; justify-content: center; padding: 18px; box-sizing: border-box; color: #3b82f6; }
+        .popup-main-content { display: flex; align-items: center; gap: 12px; flex: 1; text-align: left; }
+        .popup-icon-wrapper { width: 40px; height: 40px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box; color: #38bdf8; }
         .popup-fg .popup-icon-wrapper { color: #f59e0b; }
         .popup-icon-wrapper svg { width: 100%; height: 100%; fill: currentColor; }
-
-        .popup-badge-label { display: inline-block; font-size: 10px; font-weight: 900; background: rgba(59, 130, 246, 0.15); color: #38bdf8; padding: 4px 12px; border-radius: 99px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
-        .popup-fg .popup-badge-label { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-        .btn-popup-action { width: 100%; color: white; border: none; padding: 14px; font-weight: 800; font-size: 14px; border-radius: 12px; cursor: pointer; margin-top: 15px; }
+        
+        .popup-text-area { display: flex; flex-direction: column; }
+        .popup-badge-label { font-size: 10px; font-weight: 900; color: #38bdf8; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 2px; }
+        .popup-fg .popup-badge-label { color: #fbbf24; }
+        
+        .popup-headline { font-size: 16px; font-weight: 800; color: #ffffff; margin: 0; }
+        .popup-subline { font-size: 12px; color: #94a3b8; margin: 1px 0 0 0; font-weight: 600; }
+        
+        .popup-action-area { display: flex; align-items: center; gap: 10px; }
+        .btn-wa-action { background: #2563eb; color: white; border: none; font-size: 11px; font-weight: 800; padding: 8px 14px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+        .popup-fg .btn-wa-action { background: #059669; }
+        
+        .btn-close-popup { font-size: 22px; color: #64748b; cursor: pointer; background: none; border: none; padding: 0 5px; font-weight: 400; line-height: 1; }
+        .btn-close-popup:hover { color: #ef4444; }
     </style>
 </head>
 <body>
@@ -92,13 +99,18 @@
 
 <div id="popupOverlay" class="overlay-popup">
     <div class="popup-box" id="pBox">
-        <button class="btn-close-popup" onclick="window.tutupPopupManual()">×</button>
-        <div class="popup-icon-wrapper" id="popIconContainer"></div>
-        <div id="pLabel" class="popup-badge-label">TUGAS MASUK</div>
-        <h2 id="popFloorLine" style="font-size: 38px; font-weight: 900; margin: 5px 0; letter-spacing: -0.5px;">LINE --</h2>
-        <div id="popFloorText" style="font-size: 14px; font-weight: 700; color: #38bdf8; margin-bottom: 10px;">Lantai --</div>
-        <div id="popMedia" style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 5px; background: rgba(255,255,255,0.02); padding: 8px; border-radius: 10px;">TROLI BESAR</div>
-        <button class="btn-popup-action" id="popBtnSubmit">EKSEKUSI TUGAS</button>
+        <div class="popup-main-content">
+            <div class="popup-icon-wrapper" id="popIconContainer"></div>
+            <div class="popup-text-area">
+                <span id="pLabel" class="popup-badge-label">TUGAS MASUK</span>
+                <span id="popFloorLine" class="popup-headline">LINE --</span>
+                <span id="popMedia" class="popup-subline">TROLI BESAR</span>
+            </div>
+        </div>
+        <div class="popup-action-area">
+            <button class="btn-wa-action" id="popBtnSubmit">BUKA</button>
+            <button class="btn-close-popup" onclick="window.tutupPopupManual()">×</button>
+        </div>
     </div>
 </div>
 
@@ -129,8 +141,7 @@
 
 <script>
     const socket = io('https://dhs-paragoncorp.up.railway.app');
-    let activePopupId = null;
-    let popupTimeout = null;
+    let activePopupId = null, popupTimeout = null, audioCtx = null, alarmInterval = null;
 
     const svgIcons = {
         box: `<svg viewBox="0 0 24 24"><path d="M12 21.35l-8-4.63V7.28l8 4.63v9.44zm1-9.44l8-4.63v9.44l-8 4.63v-9.44zM12 2.65l7.65 4.42L12 11.49 4.35 7.07 12 2.65z"/></svg>`,
@@ -141,13 +152,12 @@
     function tutupSidebar() { document.getElementById('sidebarDrawer').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); }
     function toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
-        const targetTheme = currentTheme === 'light' ? 'dark' : 'light';
+        const targetTheme = currentTheme === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', targetTheme);
         document.getElementById('sidebarThemeText').innerText = targetTheme === 'light' ? '🌙 Switch Dark Mode' : '☀️ Switch Light Mode';
         tutupSidebar();
     }
     function logoutSistem() { localStorage.clear(); window.location.href = 'login.html'; }
-    
     function clearDataMonitor() {
         tutupSidebar();
         if(confirm("Apakah Anda yakin ingin RESET ALL?")) fetch('https://dhs-paragoncorp.up.railway.app/api/request/reset-all', { method: 'POST' });
@@ -160,9 +170,23 @@
         else { document.getElementById('pageRiwayat').classList.add('active'); document.getElementById('btnTabRiwayat').classList.add('active'); }
     }
 
-    // 🎯 FIX ALARM/TIMER POP-UP MANUAL CLOSING
+    // 🎯 MASTER AUDIO ALARM CONTROL
+    function alarmBunyi() {
+        alarmMati();
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        alarmInterval = setInterval(() => {
+            let osc = audioCtx.createOscillator(); let g = audioCtx.createGain();
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(580, audioCtx.currentTime);
+            g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.connect(g); g.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+        }, 600);
+    }
+    function alarmMati() { if(alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; } }
+
+    // 🎯 PENJINAK ALARM MATI MUTLAK SAAT BANNER DI-CLOSE / DI-SUBMIT
     window.tutupPopupManual = function() { 
         document.getElementById('popupOverlay').classList.remove('show'); 
+        alarmMati();
         activePopupId = null; 
         if (popupTimeout) { clearTimeout(popupTimeout); popupTimeout = null; }
     }
@@ -176,7 +200,7 @@
     function kirimTroliKeLift(id) { window.tutupPopupManual(); fetch('https://dhs-paragoncorp.up.railway.app/api/request/kirim-troli', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) }); }
     function selesaikanTugas(id) { window.tutupPopupManual(); fetch('https://dhs-paragoncorp.up.railway.app/api/request/selesai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) }); }
 
-    // 📣 LISTENER TUNGGAL ANTREAN MASUK (Pop-up Handheld)
+    // 📣 LISTENER TUNGGAL ANTREAN MASUK (WHATSAPP BANNER ENGINE)
     socket.on('ANTREAN_BARU_MASUK', (data) => {
         activePopupId = data.id; 
         const pb = document.getElementById('pBox'); 
@@ -184,32 +208,29 @@
         const visual = getMediaVisual(data.jenisMedia);
         
         document.getElementById('popIconContainer').innerHTML = visual.svg;
-        document.getElementById('popFloorLine').innerText = data.line;
-        document.getElementById('popFloorText').innerText = `Zona Operasional: Lantai ${data.lantai}`;
-        document.getElementById('popFloorText').style.color = data.lantai == 2 ? '#a855f7' : '#38bdf8';
+        document.getElementById('popFloorLine').innerText = `${data.line} (Lant. ${data.lantai})`;
         document.getElementById('popMedia').innerText = visual.text;
 
         if(data.jenisMedia === 'FG_FULL') {
-            pb.className = "popup-box popup-fg"; document.getElementById('pLabel').innerText = "🚨 TARGET TARIK FG READY!";
-            btn.className = "btn-popup-action btn-green"; btn.innerText = "✓ SELESAI TARIK SEKARANG"; btn.setAttribute('onclick', `selesaikanTugas('${data.id}')`);
+            pb.className = "popup-box popup-fg"; document.getElementById('pLabel').innerText = "🚨 TARIK FG READY";
+            btn.className = "btn-wa-action"; btn.innerText = "✓ SELESAI"; btn.setAttribute('onclick', `selesaikanTugas('${data.id}')`);
         } else {
-            pb.className = "popup-box"; document.getElementById('pLabel').innerText = "📦 REQUEST PASOKAN TROLI!";
-            
-            // 🔥 VALIDASI POP-UP: Lantai 1 langsung Selesai Instan
+            pb.className = "popup-box"; document.getElementById('pLabel').innerText = "📦 PASOKAN TROLI";
             if (data.lantai == 1) {
-                btn.className = "btn-popup-action btn-green"; btn.innerText = "✓ SELESAI SEKARANG"; btn.setAttribute('onclick', `selesaikanTugas('${data.id}')`);
+                btn.className = "btn-wa-action"; btn.innerText = "✓ SELESAI"; btn.setAttribute('onclick', `selesaikanTugas('${data.id}')`);
             } else {
-                btn.className = "btn-popup-action btn-blue"; btn.innerText = "🛫 KIRIM KE LIFT"; btn.setAttribute('onclick', `kirimTroliKeLift('${data.id}')`);
+                btn.className = "btn-wa-action"; btn.innerText = "🛫 LIFT"; btn.setAttribute('onclick', `kirimTroliKeLift('${data.id}')`);
             }
         }
         
         document.getElementById('popupOverlay').classList.add('show');
+        alarmBunyi();
 
         if (popupTimeout) clearTimeout(popupTimeout);
         popupTimeout = setTimeout(() => { window.tutupPopupManual(); }, 30000);
     });
 
-    // 📊 LISTENER DATA ANTREAN AKTIF DI TABLET HANDHELD
+    // 📊 SINKRONISASI LIST DATA ANTREAN TABLET KFG
     socket.on('DATA_ANTREAN_UPDATE', (data) => {
         const boxTroli = document.getElementById('listTroli'); const boxFG = document.getElementById('listFG');
         document.getElementById('badgeCountTroli').innerText = data.troli.length; document.getElementById('badgeCountFG').innerText = data.fg.length;
@@ -219,13 +240,10 @@
             const visual = getMediaVisual(item.jenisMedia);
             const div = document.createElement('div'); div.className = 'action-card';
             
-            // 🔥 LOGIKA BARU KONTROL TOMBOL TABLET LANTAI 1 VS LANTAI 2
             let htmlKanan = '';
             if (item.lantai == 1) {
-                // Lantai 1: Langsung tombol hijau SELESAI tanpa status lift
                 htmlKanan = `<button class="btn-action btn-green" onclick="selesaikanTugas('${item.id}')">SELESAI</button>`;
             } else {
-                // Lantai 2: Normal, nunggu lift
                 htmlKanan = item.status === 'DELIVERED' ? `<span class="lbl-status-delivered">DI LIFT 🛫</span>` : `<button class="btn-action btn-blue" onclick="kirimTroliKeLift('${item.id}')">KIRIM KE LIFT</button>`;
             }
             
