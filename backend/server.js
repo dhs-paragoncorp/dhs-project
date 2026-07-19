@@ -1,9 +1,15 @@
 const express = require('express');
+const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 
+// 1. Inisialisasi 'app' dipindah ke atas agar aman
 const app = express();
+
+// 2. Sekarang folder static ditaruh di sini (Aman dari eror!)
+app.use(express.static(path.join(__dirname, '../')));
+
 app.use(cors());
 app.use(express.json());
 
@@ -12,7 +18,6 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 // ==================== [DATABASE MASTER USER PABRIKAN] ====================
 // Seluruh Line Produksi Resmi ParagonCorp Terdaftar Otomatis (Lantai 1 & Lantai 2)
-// Password seragam menggunakan "kemas" sesuai kultur packaging line
 const MASTER_USER_DB = {
     // 🏢 AREA LANTAI 1
     "stp01": { password: "kemas", line: "STP 01", lantai: 1, role: "OPERATOR" },
@@ -55,6 +60,7 @@ const MASTER_USER_DB = {
 let antreanTroli = []; 
 let antreanFG = [];    
 let historyLog = [];   
+let currentShift = 'SHIFT 1';
 
 // API Login
 app.post('/api/auth/login', (req, res) => {
@@ -156,6 +162,24 @@ io.on('connection', (socket) => {
     socket.emit('HISTORY_UPDATE', historyLog);
 });
 
+// Di server.js
+io.on('connection', (socket) => {
+    // ... event lainnya
+
+    // Di sisi Server (Node.js)
+socket.on('GANTI_SHIFT', (data) => {
+    console.log("Server menerima perintah ganti shift ke:", data.shift);
+    currentShift = data.shift; // Simpan nilai shift di server
+    
+    // Broadcast ke SEMUA client
+    io.emit('GANTI_SHIFT', data);
+});  
+});
+
+// Tambahkan endpoint agar saat TV refresh, dia tahu shift apa yang aktif sekarang
+app.get('/api/current-shift', (req, res) => {
+    res.json({ shift: currentShift });
+});
 // Jalankan server di port 3000
 server.listen(3000, '0.0.0.0', () => {
     console.log(`=======================================================`);
