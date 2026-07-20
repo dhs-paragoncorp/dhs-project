@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DHS v1.0 • Dashboard KFG Handheld Premium</title>
-    <script src="https://dhs-paragoncorp.up.railway.app/socket.io/socket.io.js"></script>
+    <script>
+        const TAB_KFG_API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'http://localhost:3000'
+            : 'https://dhs-paragoncorp.up.railway.app';
+        document.write(`<script src="${TAB_KFG_API_BASE}/socket.io/socket.io.js"><\/script>`);
+    </script>
     <style>
         :root {
             --bg-body: #0b0f19; --bg-card: #131c2e; --border: #1e293b;
@@ -198,7 +203,7 @@
 </div>
 
 <script>
-    const socket = io('https://dhs-paragoncorp.up.railway.app');
+    
     let activePopupId = null, popupTimeout = null, audioCtx = null, alarmInterval = null;
 
     const svgIcons = {
@@ -276,7 +281,7 @@ function toggleTheme() {
     function logoutSistem() { localStorage.clear(); window.location.href = 'login.html'; }
     function clearDataMonitor() {
         tutupSidebar();
-        if(confirm("Apakah Anda yakin ingin RESET ALL?")) fetch('https://dhs-paragoncorp.up.railway.app/api/request/reset-all', { method: 'POST' });
+        if(confirm("Apakah Anda yakin ingin RESET ALL?")) fetch(`${API_BASE}/api/request/reset-all`, { method: 'POST' });
     }
     
     function bukaTab(target) {
@@ -298,6 +303,11 @@ function toggleTheme() {
     }
     function alarmMati() { if(alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; } }
 
+    const API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3000'
+        : 'https://dhs-paragoncorp.up.railway.app';
+    const socket = io(API_BASE);
+
     window.tutupPopupManual = function() { 
         document.getElementById('popupOverlay').classList.remove('show'); 
         alarmMati();
@@ -311,8 +321,8 @@ function toggleTheme() {
         return { svg: svgIcons.box, text: 'TARIK FG FULL' };
     }
 
-    function kirimTroliKeLift(id) { window.tutupPopupManual(); fetch('https://dhs-paragoncorp.up.railway.app/api/request/kirim-troli', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) }); }
-    function selesaikanTugas(id) { window.tutupPopupManual(); fetch('https://dhs-paragoncorp.up.railway.app/api/request/selesai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) }); }
+    function kirimTroliKeLift(id) { window.tutupPopupManual(); fetch(`${API_BASE}/api/request/kirim-troli`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) }); }
+    function selesaikanTugas(id) { window.tutupPopupManual(); fetch(`${API_BASE}/api/request/selesai`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) }); }
 
     socket.on('ANTREAN_BARU_MASUK', (data) => {
         activePopupId = data.id; 

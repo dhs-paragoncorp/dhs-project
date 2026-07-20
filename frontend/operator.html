@@ -178,6 +178,10 @@
         document.documentElement.setAttribute('data-theme', targetTheme);
         tutupSidebar();
     }
+    const API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3000'
+        : 'https://dhs-paragoncorp.up.railway.app';
+
     function logoutSistem() { localStorage.clear(); window.location.href = 'login.html'; }
 
     function kirimRequest(jenis) {
@@ -185,7 +189,7 @@
             alert("❌ Request Ditolak! Masih ada antrean TROLI yang aktif / berjalan.");
             return;
         }
-        fetch('https://dhs-paragoncorp.up.railway.app/api/request/baru', {
+        fetch(`${API_BASE}/api/request/baru`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ line: sessionUser.line, lantai: sessionUser.lantai, jenisMedia: jenis })
@@ -193,7 +197,7 @@
     }
 
     window.eksekusiTerimaFisik = function(id, textLabel) {
-        fetch('https://dhs-paragoncorp.up.railway.app/api/request/selesai', {
+        fetch(`${API_BASE}/api/request/selesai`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: id })
@@ -231,12 +235,12 @@
         });
     }
 
-    setInterval(() => { fetch('https://dhs-paragoncorp.up.railway.app/api/request/baru', { method: 'GET' }).catch(() => {}); }, 5000);
+    setInterval(() => { fetch(`${API_BASE}/api/request/baru`, { method: 'GET' }).catch(() => {}); }, 5000);
 
     const scriptIo = document.createElement('script');
-    scriptIo.src = "https://dhs-paragoncorp.up.railway.app/socket.io/socket.io.js";
+    scriptIo.src = `${API_BASE}/socket.io/socket.io.js`;
     scriptIo.onload = () => {
-        const socket = io('https://dhs-paragoncorp.up.railway.app');
+        const socket = io(API_BASE);
         
         socket.on('DATA_ANTREAN_UPDATE', (data) => {
             const boxAktif = document.getElementById('boxRequestAktif');

@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DHS v1.0 • Dashboard KFG TV Premium</title>
-    <script src="https://dhs-paragoncorp.up.railway.app/socket.io/socket.io.js"></script>
+    <script>
+        const DASHBOARD_KFG_API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'http://localhost:3000'
+            : 'https://dhs-paragoncorp.up.railway.app';
+        document.write(`<script src="${DASHBOARD_KFG_API_BASE}/socket.io/socket.io.js"><\/script>`);
+    </script>
     <style>
         :root {
             --bg-body: radial-gradient(circle at top, #0f172a, #020617);
@@ -285,7 +290,8 @@ body.board-2-active .stats-two-rows {
     });
 
     console.log('dashboard-kfg: init');
-    const socket = io('https://dhs-paragoncorp.up.railway.app');
+    const API_BASE = DASHBOARD_KFG_API_BASE;
+    const socket = io(API_BASE);
     const activeTimers = {};
     let audioCtx = null, alarmInterval = null, popupTimeout = null;
     let riwayatDataLokal = [];
@@ -402,7 +408,7 @@ socket.on('connect', () => {
     function logoutSistem() { localStorage.clear(); window.location.href = 'login.html'; }
     function clearDataHantu() {
         tutupSidebar();
-        if(confirm("Reset total antrean di server?")) fetch('https://dhs-paragoncorp.up.railway.app/api/request/reset-all', { method: 'POST' });
+        if(confirm("Reset total antrean di server?")) fetch(`${API_BASE}/api/request/reset-all`, { method: 'POST' });
     }
 
     window.tutupPopupManual = function() { 
@@ -478,7 +484,7 @@ function activateDot(index) {
     }
 
     window.tvSelesaiInstanLnt1 = function(id) {
-        fetch('https://dhs-paragoncorp.up.railway.app/api/request/selesai', {
+        fetch(`${API_BASE}/api/request/selesai`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: id })
@@ -660,8 +666,12 @@ function hitungSelisihMenit(target, real) {
     // 3. Langsung kurangin: (Real - Target)
     // Kalau real lebih besar dari target (telat), hasilnya positif
     // Kalau real lebih kecil dari target (lebih cepat), hasilnya negatif
-    const selisih = (rTotalMenit - tTotalMenit)+1;
+    // Hitung selisih dasarnya dulu
+let diff = rTotalMenit - tTotalMenit;
 
+// Kalau lebih besar dari 0, tidak usah tambah 1. 
+// Kalau 0 atau negatif, baru tambah 1.
+const selisih = diff > 0 ? diff : diff + 1;
     return selisih.toString();
 }
     // Fungsi bantu untuk menentukan warna (jika angka < 0 maka merah)
@@ -739,9 +749,17 @@ function renderDashboardByShift(shift, isManual = false) {
 socket.onAny((event, ...args) => {
   console.log("TV menangkap event:", event, args);
 });
-
-    // 5. Inisialisasi saat TV pertama kali nyala
-    renderDashboardByShift(getShiftOtomatis(), false);
-</script>
+// Tambahkan ini di bagian inisialisasi (di bawah pemanggilan renderDashboardByShift)
+setInterval(() => {
+    const shiftSekarang = getShiftOtomatis().split(' ')[1];
+renderDashboardByShift(shiftSekarang, false);
+    const shiftDiLayar = localStorage.getItem('shiftAktif');
+    
+    if (shiftSekarang !== shiftDiLayar) {
+        console.log("Waktunya pindah shift otomatis ke:", shiftSekarang);
+        renderDashboardByShift(shiftSekarang, false);
+    }
+}, 30000); // Mengecek setiap 30 detik
+  </script>
 </body>
 </html>

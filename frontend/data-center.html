@@ -1,168 +1,639 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DHS v1.0 • Data Center & Riwayat</title>
-    <script src="http://dhs-paragoncorp.up.railway.app/socket.io/socket.io.js"></script>
+    <script>
+        const DATA_CENTER_API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'http://localhost:3000'
+            : 'https://dhs-paragoncorp.up.railway.app';
+        document.write(`<script src="${DATA_CENTER_API_BASE}/socket.io/socket.io.js"><\/script>`);
+    </script>
     <style>
+        :root {
+            --bg-body: #080d1a;
+            --panel-bg: rgba(255, 255, 255, 0.02);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --accent: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-            background: radial-gradient(circle at top left, #121B33, #080D1A);
-            color: #ffffff;
+            background: radial-gradient(circle at top left, #121b33, #080d1a);
+            color: var(--text-main);
             margin: 0;
-            padding: 30px;
             min-height: 100vh;
+            padding: 30px;
             display: flex;
             justify-content: center;
             align-items: flex-start;
         }
-        
+
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease;
+            z-index: 10;
+        }
+
+        .sidebar-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .sidebar-drawer {
+            position: fixed;
+            left: -320px;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.98);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 20px 0 40px rgba(0, 0, 0, 0.35);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            transition: left 0.3s ease;
+            z-index: 11;
+        }
+
+        .sidebar-drawer.open {
+            left: 0;
+        }
+
+        .sidebar-header {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sidebar-menu-item,
+        .btn-line-side,
+        .nav-btn {
+            width: 100%;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            padding: 12px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .sidebar-menu-item:hover,
+        .btn-line-side:hover,
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-1px);
+        }
+
         .data-container {
             width: 100%;
             max-width: 1100px;
-            background: rgba(255, 255, 255, 0.02);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: var(--panel-bg);
+            border-radius: 24px;
+            border: 1px solid var(--panel-border);
             padding: 30px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(24px);
+            position: relative;
+            z-index: 1;
         }
-        
+
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            gap: 16px;
             padding-bottom: 20px;
-            margin-bottom: 30px;
+            margin-bottom: 28px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
-        
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .menu-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            cursor: pointer;
+            font-size: 18px;
+        }
+
         .header h2 {
             margin: 0;
             font-size: 24px;
             font-weight: 800;
-            background: linear-gradient(45deg, #00B4DB, #8d99ae);
+            background: linear-gradient(45deg, #00b4db, #8d99ae);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        
+
+        .subtext {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
         .btn-export {
             background: linear-gradient(135deg, #059669, #10b981);
             color: #fff;
             border: none;
-            padding: 12px 24px;
+            padding: 14px 24px;
             font-weight: 700;
             font-size: 13px;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
-            transition: 0.2s;
-            letter-spacing: 0.5px;
+            box-shadow: 0 4px 18px rgba(16, 185, 129, 0.25);
+            transition: box-shadow 0.2s, transform 0.2s;
         }
-        .btn-export:hover { box-shadow: 0 0 20px rgba(16, 185, 129, 0.45); }
-        .btn-export:active { transform: scale(0.96); }
-        
+
+        .btn-export:hover {
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35);
+        }
+
+        .btn-export:active {
+            transform: scale(0.98);
+        }
+
+        .message-bar {
+            display: none;
+            margin-bottom: 24px;
+            padding: 14px 18px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .message-bar.show {
+            display: block;
+        }
+
+        .message-bar.info { background: rgba(14, 165, 233, 0.16); color: #0ea5e9; }
+        .message-bar.success { background: rgba(16, 185, 129, 0.16); color: #10b981; }
+        .message-bar.error { background: rgba(239, 68, 68, 0.16); color: #ef4444; }
+
+        .btn-line-side:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-pill {
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .status-waitkfg {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .status-delivered {
+            background: rgba(14, 165, 233, 0.16);
+            color: #0ea5e9;
+        }
+
+        .status-completed {
+            background: rgba(16, 185, 129, 0.16);
+            color: #10b981;
+        }
+
+        .status-waiting {
+            background: rgba(148, 163, 184, 0.16);
+            color: #94a3b8;
+        }
+
         .table-wrapper {
             overflow-x: auto;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            background: rgba(15, 23, 42, 0.4);
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(15, 23, 42, 0.6);
         }
-        
+
         table {
             width: 100%;
             border-collapse: collapse;
             text-align: left;
             font-size: 14px;
+            min-width: 760px;
         }
-        
+
         thead tr {
-            background: rgba(255, 255, 255, 0.02);
-            color: #00B4DB;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
+            color: #00b4db;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
-        
-        th, td {
+
+        th,
+        td {
             padding: 16px 20px;
         }
-        
+
         tbody tr {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-            transition: 0.2s;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            transition: background 0.2s;
         }
-        
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
         tbody tr:nth-child(even) {
-            background: rgba(255, 255, 255, 0.01);
+            background: rgba(255, 255, 255, 0.02);
         }
-        
+
         .badge-floor {
-            padding: 4px 8px;
-            border-radius: 4px;
+            padding: 4px 10px;
+            border-radius: 999px;
             font-size: 11px;
             font-weight: 700;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.12);
         }
-        .b-l1 { background: rgba(0, 180, 219, 0.15); color: #00B4DB; }
+
+        .b-l1 { background: rgba(0, 180, 219, 0.15); color: #00b4db; }
         .b-l2 { background: rgba(56, 239, 125, 0.15); color: #38ef7d; }
         .b-l3 { background: rgba(230, 126, 34, 0.15); color: #e67e22; }
 
         .empty-history {
             text-align: center;
             padding: 40px;
-            color: #64748B;
+            color: var(--text-muted);
             font-weight: 600;
+        }
+
+        .section {
+            display: none;
+            margin-bottom: 28px;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .grid-shortcut {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .card-progress {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
     </style>
 </head>
 <body>
 
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="tutupSidebar()"></div>
+<div class="sidebar-drawer" id="sidebarDrawer">
+    <div class="sidebar-header">⚙️ DHS COMMAND CENTER</div>
+    <button class="nav-btn" onclick="showSection('home')">🏠 Dashboard Aktif</button>
+    <button class="nav-btn" onclick="showSection('qc-panel')">📦 QC Release Control</button>
+    <button class="nav-btn" onclick="showSection('history')">📜 History Log</button>
+    <div style="flex-grow: 1;"></div>
+    <button class="sidebar-menu-item" onclick="tutupSidebar()">Close Menu</button>
+</div>
+
 <div class="data-container">
     <div class="header">
-        <div>
-            <h2>DHS v1.0 • DATA CENTER</h2>
-            <div style="font-size: 12px; color: #64748B; font-weight: 600; margin-top: 4px;">📜 TAB RIWAYAT & LAPORAN PRODUKSI</div>
+        <div class="header-left">
+            <button class="menu-toggle" onclick="bukaSidebar()">☰</button>
+            <div>
+                <h2>DHS v1.0 • DATA CENTER</h2>
+                <div class="subtext">📜 Tab Riwayat & Laporan Produksi</div>
+            </div>
         </div>
-        <button class="btn-export" onclick="tarikDataExcel()">📥 TARIK DATA (CSV)</button>
+        <button class="btn-export" onclick="tarikDataExcel()">📥 Tarik Data (CSV)</button>
     </div>
 
-    <div class="table-wrapper">
-        <table>
-            <thead>
-                <tr>
-                    <th>Waktu Panggil</th>
-                    <th>Waktu Kelar</th>
-                    <th>Lokasi</th>
-                    <th>Jenis Media</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="historyTableBody">
-                <tr>
-                    <td colspan="5" class="empty-history">Belum ada riwayat aktivitas hari ini.</td>
-                </tr>
-            </tbody>
-        </table>
+    <div id="statusMessage" class="message-bar info"></div>
+
+    <div id="home" class="section active">
+        <h3 style="margin-top:0;">Active Tasks</h3>
+        <div id="active-tasks" class="grid-shortcut"></div>
+    </div>
+
+    <div id="qc-panel" class="section">
+        <h3 style="margin-top:0;">QC Release Control</h3>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:18px;">
+            <div id="qcReleaseCount" style="color:#94a3b8; font-size:14px;">0 tugas WAIT_KFG</div>
+        </div>
+        <div id="qc-lines" class="grid-shortcut"></div>
+        <h4 style="margin: 24px 0 8px 0; color: #94a3b8; font-size: 14px;">Tugas dalam Proses / Waiting KFG</h4>
+        <div id="qc-active-tasks" class="grid-shortcut"></div>
+    </div>
+
+    <div id="history" class="section">
+        <h3 style="margin-top:0;">History Log</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Waktu Panggil</th>
+                        <th>Waktu Kelar</th>
+                        <th>Lokasi</th>
+                        <th>Jenis Media</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <tr>
+                        <td colspan="5" class="empty-history">Belum ada riwayat aktivitas hari ini.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <script>
-    const socket = io('http://dhs-paragoncorp.up.railway.app');
+    const API_BASE = DATA_CENTER_API_BASE;
+    const socket = io(API_BASE);
     let lokalHistory = [];
+    const activeTaskMap = new Map();
+    let statusTimeout = null;
+
+    function showStatusMessage(text, type = 'info') {
+        const el = document.getElementById('statusMessage');
+        el.innerText = text;
+        el.className = `message-bar show ${type}`;
+        if (statusTimeout) clearTimeout(statusTimeout);
+        statusTimeout = setTimeout(() => {
+            el.className = 'message-bar';
+        }, 3200);
+    }
+
+    function bukaSidebar() {
+        document.getElementById('sidebarDrawer').classList.add('open');
+        document.getElementById('sidebarOverlay').classList.add('show');
+    }
+
+    function tutupSidebar() {
+        document.getElementById('sidebarDrawer').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('show');
+    }
+
+    function showSection(id) {
+        document.querySelectorAll('.section').forEach(section => {
+            section.classList.toggle('active', section.id === id);
+        });
+    }
+
+    const lineLnt1 = ['STP 01', 'LIP 16', 'BTP 03', 'LIP 09', 'VSN 05', 'VMN 06', 'BRP 04', 'VMN 05', 'VSN 03', 'BRP 02', 'VAM 03', 'BRP 01'];
+    const lineLnt2 = ['EMP 16', 'LIP 11', 'BTP 04', 'LIP 10', 'JRP 02', 'FOP 03', 'BTP 01', 'BTP 02', 'LIP 18', 'VAM 02', 'SBP 01', 'VMN 04', 'LIP 09', 'LIP 06', 'LIP 08', 'ALP 03', 'LIP 12'];
+
+    function getStatusClass(status) {
+        if (status === 'WAIT_KFG') return 'status-waitkfg';
+        if (status === 'WAITING') return 'status-waiting';
+        if (status === 'DELIVERED') return 'status-delivered';
+        if (status === 'COMPLETED') return 'status-completed';
+        return 'status-waiting';
+    }
+
+    function resolveLantaiFromLine(line) {
+        const normalized = String(line).trim().toUpperCase();
+        if (lineLnt1.includes(normalized)) return 1;
+        if (lineLnt2.includes(normalized)) return 2;
+        return 1;
+    }
+
+    function requestQCRelease(line) {
+        const lantai = resolveLantaiFromLine(line);
+        const payload = { line: String(line).trim().toUpperCase(), lantai, jenisMedia: 'FG_FULL', status: 'WAIT_KFG' };
+        showStatusMessage(`QC release ${line} dikirim ke KFG...`, 'info');
+
+        fetch(`${API_BASE}/api/request/baru`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success) {
+                showStatusMessage(`QC ${line} berhasil masuk antrian KFG`, 'success');
+                if (data.data) {
+                    upsertTaskCard(data.data);
+                }
+            } else {
+                showStatusMessage(`Gagal kirim QC ${line}`, 'error');
+            }
+        })
+        .catch(() => {
+            showStatusMessage('Gagal koneksi ke backend untuk QC release.', 'error');
+        });
+    }
+
+    function setTaskPending(id) {
+        const button = document.querySelector(`#task-${id} button, #qc-task-${id} button`);
+        const status = document.querySelector(`#task-${id} .status-pill, #qc-task-${id} .status-pill`);
+        if (button) {
+            button.disabled = true;
+            button.innerText = 'Mengirim...';
+        }
+        if (status) {
+            status.innerText = 'PENGIRIMAN';
+        }
+    }
+
+    function konfirmasiSelesai(id) {
+        showStatusMessage(`Mengirim status selesai untuk task ${id}...`, 'info');
+        setTaskPending(id);
+        fetch(`${API_BASE}/api/request/selesai`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        })
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success) {
+                showStatusMessage(`Task ${id} berhasil diselesaikan.`, 'success');
+            } else {
+                showStatusMessage(`Task ${id} gagal diselesaikan.`, 'error');
+                const button = document.querySelector(`#task-${id} button, #qc-task-${id} button`);
+                if (button) {
+                    button.disabled = false;
+                    button.innerText = '✅ Selesaikan';
+                }
+            }
+        })
+        .catch(() => {
+            showStatusMessage('Gagal koneksi ke backend untuk selesai.', 'error');
+            const button = document.querySelector(`#task-${id} button, #qc-task-${id} button`);
+            if (button) {
+                button.disabled = false;
+                button.innerText = '✅ Selesaikan';
+            }
+        });
+    }
+
+    function renderEmptyActiveTasks() {
+        const emptyHtml = `<div class="empty-history" style="padding: 30px;">Tidak ada tugas aktif saat ini.</div>`;
+        document.getElementById('active-tasks').innerHTML = emptyHtml;
+        document.getElementById('qc-active-tasks').innerHTML = emptyHtml;
+    }
+
+    function createTaskCardElement(data, prefix = '') {
+        const card = document.createElement('div');
+        card.id = `${prefix}task-${data.id}`;
+        card.className = 'card-progress';
+        card.innerHTML = `
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                <div>
+                    <div style="font-size:16px; font-weight:700;">${data.line}</div>
+                    <div style="font-size:12px; color:#94a3b8;">Lantai ${data.lantai || '-'} • ${getMediaText(data.jenisMedia || 'TROLI_KECIL')}</div>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <span class="status-pill ${getStatusClass(data.status)}">${data.status}</span>
+                    <button style="background:#10b981; color:white; border:none; border-radius:10px; padding:8px 12px; cursor:pointer;" onclick="konfirmasiSelesai('${data.id}')">✅ Selesaikan</button>
+                </div>
+            </div>`;
+        return card;
+    }
+
+    function upsertTaskCard(data) {
+        activeTaskMap.set(data.id, data);
+
+        const existingCard = document.getElementById(`task-${data.id}`);
+        const cardHtml = createTaskCardElement(data);
+        const activeContainer = document.getElementById('active-tasks');
+        const qcContainer = document.getElementById('qc-active-tasks');
+
+        if (existingCard) {
+            existingCard.replaceWith(cardHtml);
+        } else {
+            activeContainer.appendChild(cardHtml);
+        }
+
+        // Hanya tampilkan di QC panel jika status benar-benar WAIT_KFG
+        if (data.status === 'WAIT_KFG') {
+            const existingQcCard = document.getElementById(`qc-task-${data.id}`);
+            const qcCardHtml = createTaskCardElement(data, 'qc-');
+            if (existingQcCard) {
+                existingQcCard.replaceWith(qcCardHtml);
+            } else {
+                qcContainer.appendChild(qcCardHtml);
+            }
+        } else {
+            // jika sebelumnya ada card QC tapi sekarang bukan WAIT_KFG, hapus
+            const prevQc = document.getElementById(`qc-task-${data.id}`);
+            if (prevQc) prevQc.remove();
+        }
+    }
+
+    function removeTaskCard(id) {
+        activeTaskMap.delete(id);
+        const el = document.getElementById(`task-${id}`);
+        const qcEl = document.getElementById(`qc-task-${id}`);
+        if (el) el.remove();
+        if (qcEl) qcEl.remove();
+        if (activeTaskMap.size === 0) renderEmptyActiveTasks();
+    }
+
+    function updateActiveTasks(data) {
+        activeTaskMap.clear();
+        const container = document.getElementById('active-tasks');
+        const qcContainer = document.getElementById('qc-active-tasks');
+        const countLabel = document.getElementById('qcReleaseCount');
+        container.innerHTML = '';
+        qcContainer.innerHTML = '';
+        const items = [...data.troli, ...data.fg];
+
+        if (!items || items.length === 0) {
+            renderEmptyActiveTasks();
+            countLabel.innerText = '0 tugas WAIT_KFG';
+            return;
+        }
+
+        items.forEach(item => upsertTaskCard(item));
+        // Hitung tugas yang relevan untuk QC: semua FG_FULL plus yang explicit WAIT_KFG
+        const waitingCount = items.filter(item => item.status === 'WAIT_KFG' || item.jenisMedia === 'FG_FULL').length;
+        countLabel.innerText = `${waitingCount} tugas WAIT_KFG`;
+        const qcTasks = items.filter(item => item.status === 'WAIT_KFG' || item.jenisMedia === 'FG_FULL');
+        if (qcTasks.length === 0) {
+            qcContainer.innerHTML = `<div class="empty-history" style="padding: 30px;">Tidak ada tugas WAIT_KFG saat ini.</div>`;
+        } else {
+            qcTasks.forEach(item => {
+                const existingQcCard = document.getElementById(`qc-task-${item.id}`);
+                const qcCardHtml = createTaskCardElement(item, 'qc-');
+                if (existingQcCard) {
+                    existingQcCard.replaceWith(qcCardHtml);
+                } else {
+                    qcContainer.appendChild(qcCardHtml);
+                }
+            });
+        }
+    }
+
+    function generateQCButtons() {
+        const container = document.getElementById('qc-lines');
+        container.innerHTML = '';
+        [...lineLnt1, ...lineLnt2].forEach(line => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-line-side';
+            btn.innerText = line;
+            btn.onclick = () => {
+                btn.disabled = true;
+                btn.innerText = 'Terkirim...';
+                requestQCRelease(line);
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerText = line;
+                }, 800);
+            };
+            container.appendChild(btn);
+        });
+    }
 
     function getMediaText(jenisMedia) {
-        if(jenisMedia === 'TROLI_BESAR') return '📦 PALLET WAREHOUSE';
-        if(jenisMedia === 'TROLI_KECIL') return '🛒 Troli Kecil';
+        if (jenisMedia === 'TROLI_BESAR') return '📦 PALLET WAREHOUSE';
+        if (jenisMedia === 'TROLI_KECIL') return '🛒 Troli Kecil';
         return '🚨 Kirim FG Full';
     }
 
-    // Fungsi menggambar ulang tabel riwayat berdasarkan data dari server
     function renderTable(historyData) {
         lokalHistory = historyData;
         const tbody = document.getElementById('historyTableBody');
         tbody.innerHTML = '';
 
-        if(historyData.length === 0) {
+        if (!historyData || historyData.length === 0) {
             tbody.innerHTML = `<tr><td colspan="5" class="empty-history">Belum ada riwayat aktivitas hari ini.</td></tr>`;
             return;
         }
@@ -180,33 +651,58 @@
         });
     }
 
-    // 🔥 PENGUBUNG UTAMA: Menangkap log riwayat dari server secara real-time
-    socket.on('HISTORY_UPDATE', (historyData) => {
-        renderTable(historyData);
+    socket.on('connect', () => {
+        console.log('Socket connected ke DHS server');
     });
 
-    // Fitur unduh file laporan untuk Excel
+    socket.on('connect_error', (error) => {
+        console.warn('Socket connection error:', error);
+    });
+
+    socket.on('DATA_ANTREAN_UPDATE', updateActiveTasks);
+    socket.on('ANTREAN_BARU_MASUK', data => {
+        upsertTaskCard(data);
+        showStatusMessage(`Task baru diterima: ${data.line} (${data.status})`, 'info');
+    });
+    socket.on('ANTREAN_SELESAI_SYNC', id => {
+        removeTaskCard(id);
+        showStatusMessage(`Task ${id} telah selesai oleh KFG`, 'success');
+    });
+    socket.on('HISTORY_UPDATE', renderTable);
+    socket.on('KFG_SELESAI_ACK', ack => {
+        if (ack && ack.success) {
+            showStatusMessage(`KFG selesai untuk ID ${ack.id}`, 'success');
+        } else {
+            showStatusMessage(`Gagal menyelesaikan task ${ack?.id || ''}`, 'error');
+        }
+    });
+    socket.on('disconnect', () => {
+        showStatusMessage('Koneksi socket terputus.', 'error');
+    });
+
+    renderEmptyActiveTasks();
+
     function tarikDataExcel() {
-        if(lokalHistory.length === 0) {
-            alert("Tidak ada data riwayat yang bisa ditarik!");
+        if (!lokalHistory || lokalHistory.length === 0) {
+            alert('Tidak ada data riwayat yang bisa ditarik!');
             return;
         }
 
-        // Header CSV dengan separator titik koma (;) agar otomatis rapi saat dibuka di Excel regional Indonesia
-        let csvContent = "data:text/csv;charset=utf-8,Waktu Panggil;Waktu Kelar;Lantai;Line;Jenis Media;Status\n";
-        
+        let csvContent = 'data:text/csv;charset=utf-8,Waktu Panggil;Waktu Kelar;Lantai;Line;Jenis Media;Status\n';
         lokalHistory.forEach(row => {
             csvContent += `"${row.waktu}";"${row.waktuSelesai || '-'}";"Lantai ${row.lantai}";"${row.line}";"${row.jenisMedia}";"SELESAI"\n`;
         });
 
         const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `DHS_Laporan_QLT_${new Date().toISOString().split('T')[0]}.csv`);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', `DHS_Laporan_QLT_${new Date().toISOString().split('T')[0]}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     }
+
+    generateQCButtons();
 </script>
 </body>
 </html>
