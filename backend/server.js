@@ -152,6 +152,10 @@ app.get('/api/request/baru', (req, res) => {
     return res.json({ success: true, data: { troli: antreanTroli, fg: antreanFG } });
 });
 
+app.get('/api/request/status', (req, res) => {
+    return res.json({ success: true, data: { troli: antreanTroli, fg: antreanFG } });
+});
+
 // API Kirim Troli ke Lift
 app.post('/api/request/kirim-troli', (req, res) => {
     const { id } = req.body;
@@ -237,10 +241,22 @@ io.on('connection', (socket) => {
 app.get('/api/current-shift', (req, res) => {
     res.json({ shift: currentShift });
 });
-// Jalankan server di port 3000
-server.listen(3000, '0.0.0.0', () => {
+// Jalankan server pada port yang disediakan oleh environment, fallback ke 3000
+const PORT = process.env.PORT || 3000;
+
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`ERROR: Port ${PORT} sudah digunakan. Hentikan proses lain yang mendengarkan port ini atau gunakan PORT lain.`);
+    } else {
+        console.error('Server error:', err);
+    }
+    process.exit(1);
+});
+
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`=======================================================`);
     console.log(`🚀 DHS ENGINE V2.6 ONLINE - PRODUCTION GO-LIVE READY`);
+    console.log(`📡 Listening on port ${PORT}`);
     console.log(`🏢 ALL STATIONS ACTIVATED: ${Object.keys(MASTER_USER_DB).length - 3} PACKAGING LINES LINKED`);
     console.log(`=======================================================`);
 });
