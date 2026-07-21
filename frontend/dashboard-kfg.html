@@ -813,11 +813,19 @@ function cekPerluReset(waktu) {
     socket.on('FORCE_RESET_SCREEN', () => { location.reload(); });
     // 1. Fungsi penentu shift berdasarkan jam (Auto-Mode)
     function getShiftOtomatis() {
-        const jam = new Date().getHours();
-        if (jam >= 7 && jam < 15) return 'SHIFT 1';
-        if (jam >= 15 && jam < 23) return 'SHIFT 2';
-        return 'SHIFT 3'; 
-    }
+    const jam = new Date().getHours();
+    const menit = new Date().getMinutes();
+    const totalMenit = (jam * 60) + menit;
+
+    // Shift 1: 07:00 (420 menit) sampai sebelum 15:00 (900 menit)
+    if (totalMenit >= 420 && totalMenit < 900) return 'SHIFT 1';
+    
+    // Shift 2: 15:00 (900 menit) sampai sebelum 23:00 (1380 menit)
+    if (totalMenit >= 900 && totalMenit < 1380) return 'SHIFT 2';
+    
+    // Shift 3: 23:00 (1380 menit) sampai sebelum 07:00 (420 menit hari berikutnya)
+    return 'SHIFT 3';
+}
 
     // 2. Variabel Timer
     let autoRevertTimer = null;
