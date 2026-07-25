@@ -137,7 +137,7 @@
 
         /* Memperbesar padding atas-bawah sel tabel ritase agar lebih padat dan pas */
         .history-table td { padding: 7px 3px; border: 1px solid #cbd5e1; font-size: 13px; }
-        
+
         .slider-container { display: flex; width: 100%; flex-grow: 1; overflow-x: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; align-items: center; }
         .board { min-width: 100%; width: 100%; scroll-snap-align: start; box-sizing: border-box; }
         .board-inner { width: 100%; margin: 0 auto; display: grid; gap: 8px; box-sizing: border-box; padding: 0 5px; }
@@ -820,19 +820,52 @@
 
     function cekPerluReset(waktu) {
         if (!waktu || waktu === "-") return true;
+        
         const parts = waktu.split(' ');
+        if (parts.length < 2) return true;
+        
         const tglParts = parts[0].split('/'); 
         const jamParts = parts[1].split(':'); 
+        
         const dataDate = new Date(tglParts[2], tglParts[1] - 1, tglParts[0], jamParts[0], jamParts[1], jamParts[2] || 0);
         const sekarang = new Date();
+
+        // Geser -6 jam 55 menit (reset operasional baru pukul 06:55 pagi)
+        const offsetReset = (6 * 60 + 55) * 60 * 1000;
+        const operasionalData = new Date(dataDate.getTime() - offsetReset);
+        const operasionalSekarang = new Date(sekarang.getTime() - offsetReset);
+
+        if (operasionalData.toDateString() !== operasionalSekarang.toDateString()) {
+            return true; 
+        }
 
         const selisihMs = sekarang.getTime() - dataDate.getTime();
         if (selisihMs > 86400000 || selisihMs < -300000) {
             return true; 
         }
+        
         return false;
     }
 
+    function isTimePassedOrToday(itemJam, shiftNum) {
+        const now = new Date(); 
+        
+        // Geser -6 jam 55 menit untuk acuan hari operasional aktif
+        const offsetReset = (6 * 60 + 55) * 60 * 1000;
+        let operationalNow = new Date(now.getTime() - offsetReset);
+        
+        const startTimeStr = itemJam.split('-')[0].trim();
+        const [targetHour, targetMinute] = startTimeStr.split(':').map(Number);
+        
+        let targetDateTime = new Date(operationalNow);
+        targetDateTime.setHours(targetHour, targetMinute, 0, 0);
+        
+        if (now < targetDateTime) {
+            return false; 
+        }
+        
+        return true; 
+    }
     function getShiftOtomatis() {
         const jam = new Date().getHours();
         const menit = new Date().getMinutes();
