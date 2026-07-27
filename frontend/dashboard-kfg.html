@@ -653,7 +653,10 @@
                     </div>`;
                 
                 let epochValid = item.waktuEpoch;
-                if (!epochValid || (Date.now() - epochValid > 86400000)) epochValid = Date.now();
+                const now = Date.now();
+                if (!epochValid || Math.abs(now - epochValid) > 86400000) {
+                    epochValid = now; 
+                }
                 startTimer(item.id, epochValid);
             });
         }
