@@ -124,7 +124,6 @@
         .history-table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; border-radius: 12px; overflow: hidden; font-size: 13px; }
         .history-table th { background-color: #0f4c5c; color: white; padding: 8px 4px; font-size: 13px; letter-spacing: 0.5px; border: 1px solid #135d70; }
         
-        /* Lebar proporsional kolom tabel ritase */
         .history-table th:nth-child(1) { width: 5%; }  /* RIT */
         .history-table th:nth-child(2) { width: 14%; } /* JAM */
         .history-table th:nth-child(3) { width: 11%; } /* J4 In */
@@ -135,7 +134,6 @@
         .history-table th:nth-child(8) { width: 11%; } /* J6 Out */
         .history-table th:nth-child(9) { width: 9%; }  /* OR */
 
-        /* Memperbesar padding atas-bawah sel tabel ritase agar lebih padat dan pas */
         .history-table td { padding: 7px 3px; border: 1px solid #cbd5e1; font-size: 13px; }
 
         .slider-container { display: flex; width: 100%; flex-grow: 1; overflow-x: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; align-items: center; }
@@ -255,25 +253,24 @@
 
                 <h2 id="shiftTitle" style="color:#38bdf8; text-align:center; font-size: 18px; font-weight: 900; letter-spacing: 1px; margin: 0 0 6px 0;">SHIFT 1</h2>
 
-                <!-- TABEL RITASE DENGAN KOLOM J4, J3, J6, DAN OR -->
                 <table class="history-table" id="tabelData" style="margin: 0;">
-    <thead>
-        <tr style="background-color: #0f4c5c; color: white;">
-            <th rowspan="2" style="vertical-align: middle;">RIT</th>
-            <th rowspan="2" style="vertical-align: middle;">JAM</th>
-            <th colspan="2">J4</th>
-            <th colspan="2">J3</th>
-            <th colspan="2">J6</th>
-            <th rowspan="2" style="vertical-align: middle;">OR</th>
-        </tr>
-        <tr style="background-color: #0f4c5c; color: white;">
-            <th>In</th><th>Out</th>
-            <th>In</th><th>Out</th>
-            <th>In</th><th>Out</th>
-        </tr>
-    </thead>
-    <tbody style="color: white;"></tbody>
-</table>
+                    <thead>
+                        <tr style="background-color: #0f4c5c; color: white;">
+                            <th rowspan="2" style="vertical-align: middle;">RIT</th>
+                            <th rowspan="2" style="vertical-align: middle;">JAM</th>
+                            <th colspan="2">J4</th>
+                            <th colspan="2">J3</th>
+                            <th colspan="2">J6</th>
+                            <th rowspan="2" style="vertical-align: middle;">OR</th>
+                        </tr>
+                        <tr style="background-color: #0f4c5c; color: white;">
+                            <th>In</th><th>Out</th>
+                            <th>In</th><th>Out</th>
+                            <th>In</th><th>Out</th>
+                        </tr>
+                    </thead>
+                    <tbody style="color: white;"></tbody>
+                </table>
 
                 <div style="margin-top: 8px; display: flex; gap: 20px; font-size: 11px; font-weight: 700; color: #94a3b8; justify-content: center;">
                     <div style="display: flex; align-items: center; gap: 5px;">
@@ -311,33 +308,24 @@
 </div>
 
 <script>
-    // 1. Script untuk Fullscreen pada klik pertama
     document.addEventListener('click', () => {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen().catch(() => {});
         }
     }, { once: true });
 
-    // 2. Script agar layar TV / Monitor tidak meredup atau sleep (Wake Lock API)
     async function keepScreenAwake() {
         if ('wakeLock' in navigator) {
             try {
                 let wakeLock = await navigator.wakeLock.request('screen');
-                console.log('💡 Layar TV dikunci agar menyala terus.');
-                
-                // Jika halaman kembali aktif dari tab lain, minta ulang izin Wake Lock
                 document.addEventListener('visibilitychange', async () => {
                     if (wakeLock !== null && document.visibilityState === 'visible') {
                         wakeLock = await navigator.wakeLock.request('screen');
                     }
                 });
-            } catch (err) {
-                console.error(`Gagal mengaktifkan Wake Lock: ${err.name}, ${err.message}`);
-            }
+            } catch (err) {}
         }
     }
-    
-    // Jalankan fungsi agar layar TV menyala terus
     keepScreenAwake();
 
     window.addEventListener('error', function(e){
@@ -349,8 +337,24 @@
                 b.style.display = 'block';
             }
         } catch(_){}
-        console.error('Captured error:', e);
     });
+
+    // Jam Digital Realtime Aman & Konsisten (Format HH:MM:SS)
+    setInterval(() => {
+        try {
+            const now = new Date();
+            const jam = String(now.getHours()).padStart(2, '0');
+            const menit = String(now.getMinutes()).padStart(2, '0');
+            const detik = String(now.getSeconds()).padStart(2, '0');
+            const elClock = document.getElementById('clock');
+            if (elClock) elClock.innerText = `${jam}:${menit}:${detik}`;
+        } catch(err) {}
+    }, 1000);
+
+    const dateEl = document.getElementById('dateText');
+    if (dateEl) {
+        dateEl.innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
 
     const API_BASE = DASHBOARD_KFG_API_BASE;
     const socket = io(API_BASE);
@@ -373,10 +377,8 @@
     window.addEventListener('pointerdown', unlockAudio, { once: true });
     window.addEventListener('click', unlockAudio, { once: true });
 
-    socket.on('connect', () => { console.log("✅ TV Terhubung ke Server Railway!"); });
     socket.on('GANTI_SHIFT', (data) => { renderDashboardByShift(data.shift, true); });
 
-    // Struktur Data Shift Lengkap dengan J4, J3, J6, dan OR (Persiapan Data Kosong / "-" )
     const dataShift = {
         1: [
             {rit: 1, jam: "07:00 - 08:05", targetInJ4: "07:00", targetOutJ4: "07:15", realInJ4: "-", realOutJ4: "-", targetInJ3: "07:20", targetOutJ3: "07:35", realInJ3: "-", realOutJ3: "-", targetInJ6: "07:40", targetOutJ6: "08:05", realInJ6: "-", realOutJ6: "-", or: "In J4"},
@@ -404,23 +406,11 @@
         ]
     };
 
-    function renderCellContent(targetTime, realTime) {
-        const val = hitungSelisihMenit(targetTime, realTime);
-        const bg = val > 0 ? "#dc2626" : (val < 0 ? "#16a34a" : "white");
-        const col = val !== 0 ? "white" : "black";
-        const displayVal = val === 0 ? "-" : Math.abs(val);
-
-        return `
-            <div style="font-weight: bold; padding: 6px 2px; border-bottom: 1px solid #cbd5e1; font-size: 11px;">${targetTime}</div>
-            <div style="background-color: ${bg}; color: ${col}; font-weight: 900; padding: 6px 2px; font-size: 11px;">
-                ${displayVal}
-            </div>
-        `;
-    }
-
     function showShift(shiftNum) {
-        document.getElementById('shiftTitle').innerText = "SHIFT " + shiftNum;
+        const titleEl = document.getElementById('shiftTitle');
+        if (titleEl) titleEl.innerText = "SHIFT " + shiftNum;
         const tbody = document.querySelector('#tabelData tbody');
+        if (!tbody) return;
         tbody.innerHTML = '';
         
         dataShift[shiftNum].forEach((item, index) => {
@@ -441,22 +431,18 @@
             tbody.innerHTML += `
                 <tr style="background-color: ${bgRit}; color: #0f172a; text-align: center;">
                     <td style="border: 1px solid #cbd5e1; font-weight: 900; vertical-align: middle;">${item.rit}</td>
-                    <td style="border: 1px solid #cbd5e1; font-weight: 800; vertical-align: middle; font-size: 11px;">${item.jam}</td>
+                    <td style="border: 1px solid #cbd5e1; font-weight: 800; vertical-align: middle; font-size: 13px;">${item.jam}</td>
                     
-                    <!-- J4 In & Out -->
-                    <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 6px 2px;">${getCellHtml(item.targetInJ4, valInJ4, item.realInJ4, item.jam, shiftNum)}</td>
-                    <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 6px 2px;">${getCellHtml(item.targetOutJ4, valOutJ4, item.realOutJ4, item.jam, shiftNum)}</td>
+                    <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 7px 3px;">${getCellHtml(item.targetInJ4, valInJ4, item.realInJ4, item.jam, shiftNum)}</td>
+                    <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 7px 3px;">${getCellHtml(item.targetOutJ4, valOutJ4, item.realOutJ4, item.jam, shiftNum)}</td>
 
-                    <!-- J3 In & Out -->
-                    <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 6px 2px;">${getCellHtml(item.targetInJ3, valInJ3, item.realInJ3, item.jam, shiftNum)}</td>
-                    <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 6px 2px;">${getCellHtml(item.targetOutJ3, valOutJ3, item.realOutJ3, item.jam, shiftNum)}</td>
+                    <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 7px 3px;">${getCellHtml(item.targetInJ3, valInJ3, item.realInJ3, item.jam, shiftNum)}</td>
+                    <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 7px 3px;">${getCellHtml(item.targetOutJ3, valOutJ3, item.realOutJ3, item.jam, shiftNum)}</td>
 
-                    <!-- J6 In & Out -->
-                    <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 6px 2px;">${getCellHtml(item.targetInJ6, valInJ6, item.realInJ6, item.jam, shiftNum)}</td>
-                    <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 6px 2px;">${getCellHtml(item.targetOutJ6, valOutJ6, item.realOutJ6, item.jam, shiftNum)}</td>
+                    <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 7px 3px;">${getCellHtml(item.targetInJ6, valInJ6, item.realInJ6, item.jam, shiftNum)}</td>
+                    <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 7px 3px;">${getCellHtml(item.targetOutJ6, valOutJ6, item.realOutJ6, item.jam, shiftNum)}</td>
 
-                    <!-- OR -->
-                    <td style="border: 1px solid #cbd5e1; font-weight: 800; vertical-align: middle; font-size: 10px; background: ${index % 2 === 0 ? '#f8fafc' : '#e2e8f0'}; padding: 0;">
+                    <td style="border: 1px solid #cbd5e1; font-weight: 800; vertical-align: middle; font-size: 11px; background: ${index % 2 === 0 ? '#f8fafc' : '#e2e8f0'}; padding: 0;">
                         <div style="padding: 4px 2px; border-bottom: 1px solid #cbd5e1;">${orIn}</div>
                         <div style="padding: 4px 2px;">${orOut}</div>
                     </td>
@@ -475,9 +461,6 @@
         troli_kecil: `<svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="4" y="4" width="16" height="4" rx="1"/><rect x="4" y="10" width="16" height="4" rx="1"/><rect x="4" y="16" width="16" height="4" rx="1"/></svg>`,
         fg_full: `<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`
     };
-
-    setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString('id-ID'); }, 1000);
-    document.getElementById('dateText').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     
     function bukaSidebar() { document.getElementById('sidebarDrawer').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('show'); }
     function tutupSidebar() { document.getElementById('sidebarDrawer').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); }
@@ -607,6 +590,7 @@
     
     socket.on('DATA_ANTREAN_UPDATE', (data) => {
         const cTroli = document.getElementById('containerTroli'); const cFG = document.getElementById('containerFG');
+        if (!cTroli || !cFG) return;
         
         document.getElementById('statTroliLnt1').innerText = data.troli.filter(item => item.lantai == 1).length;
         document.getElementById('statTroliLnt2').innerText = data.troli.filter(item => item.lantai == 2).length;
@@ -636,8 +620,12 @@
                         ${btnHtml}
                     </div>`;
                 
+                // Paksa epoch menggunakan waktu real saat data diterima/direfresh jika selisihnya terlalu jauh atau tidak valid
                 let epochValid = item.waktuEpoch;
-                if (!epochValid || (Date.now() - epochValid > 86400000)) epochValid = Date.now();
+                const now = Date.now();
+                if (!epochValid || Math.abs(now - epochValid) > 86400000) {
+                    epochValid = now; 
+                }
                 startTimer(item.id, epochValid);
             });
         }
@@ -680,6 +668,7 @@
 
     function renderTabelHistory() {
         const tbody = document.getElementById('historyTableBody');
+        if (!tbody) return;
         if(riwayatDataLokal.length === 0) {
             tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-sub);">Belum ada riwayat aktivitas.</td></tr>`;
             return;
@@ -755,68 +744,43 @@
         const tP = target.split(':');
         const rP = real.split(':');
 
+        // Ubah target dan realisasi ke total menit secara utuh (Jam * 60 + Menit)
         const tTotalMenit = (parseInt(tP[0], 10) * 60) + parseInt(tP[1], 10);
         const rTotalMenit = (parseInt(rP[0], 10) * 60) + parseInt(rP[1], 10);
 
+        // Selisih murni: Target dikurangi Realisasi
         let selisih = tTotalMenit - rTotalMenit;
-
-        if (selisih > 0) {
-            selisih -= 1; 
-        } else if (selisih < 0) {
-            selisih += 1; 
-        }
 
         return selisih;
     }
-
     function getCellHtml(targetTime, val, realTime, itemJam, shiftNum) {
         const isValidTime = isTimePassedOrToday(itemJam, shiftNum);
 
         if (!isValidTime || !realTime || realTime === "-" || realTime === "" || realTime === "00:00") {
             return `
-                <div style="font-weight: bold; font-size: 11px;">${targetTime}</div>
-                <div style="color: #94a3b8; font-size: 11px;">-</div>
+                <div style="font-weight: bold; font-size: 13px;">${targetTime}</div>
+                <div style="color: #94a3b8; font-size: 13px;">-</div>
             `;
         }
         
         let displayVal = val;
-        let bg = "#334155";
+        let bg = "#334155"; // Abu-abu gelap untuk tepat waktu (0)
 
         if (val > 0) {
-            bg = "#16a34a"; 
-            displayVal = val; 
+            bg = "#16a34a"; // Hijau (Lebih cepat)
         } else if (val < 0) {
-            bg = "#dc2626"; 
-            displayVal = val; 
+            bg = "#dc2626"; // Merah (Lebih lambat)
         }
 
         return `
-            <div style="font-weight: bold; font-size: 11px; margin-bottom: 2px;">${targetTime}</div>
-            <div style="background-color: ${bg}; color: white; padding: 2px 6px; border-radius: 4px; font-weight: 900; display: inline-block; font-size: 11px;">
+            <div style="font-weight: bold; font-size: 13px; margin-bottom: 2px;">${targetTime}</div>
+            <div style="background-color: ${bg}; color: white; padding: 2px 6px; border-radius: 4px; font-weight: 900; display: inline-block; font-size: 13px;">
                 ${displayVal}
             </div>
         `;
     }
-
     setInterval(updateTabelDariSpreadsheet, 60000);
     updateTabelDariSpreadsheet();
-
-    function isTimePassedOrToday(itemJam, shiftNum) {
-        const now = new Date(); 
-        let operationalNow = new Date(now.getTime() - (7 * 60 * 60 * 1000));
-        
-        const startTimeStr = itemJam.split('-')[0].trim();
-        const [targetHour, targetMinute] = startTimeStr.split(':').map(Number);
-        
-        let targetDateTime = new Date(operationalNow);
-        targetDateTime.setHours(targetHour, targetMinute, 0, 0);
-        
-        if (now < targetDateTime) {
-            return false; 
-        }
-        
-        return true; 
-    }
 
     function cekPerluReset(waktu) {
         if (!waktu || waktu === "-") return true;
@@ -850,7 +814,6 @@
     function isTimePassedOrToday(itemJam, shiftNum) {
         const now = new Date(); 
         
-        // Geser -6 jam 55 menit untuk acuan hari operasional aktif
         const offsetReset = (6 * 60 + 55) * 60 * 1000;
         let operationalNow = new Date(now.getTime() - offsetReset);
         
@@ -866,13 +829,14 @@
         
         return true; 
     }
+
     function getShiftOtomatis() {
         const jam = new Date().getHours();
         const menit = new Date().getMinutes();
         const totalMenit = (jam * 60) + menit;
 
-        if (totalMenit >= 420 && totalMenit < 900) return 'SHIFT 1';
-        if (totalMenit >= 900 && totalMenit < 1380) return 'SHIFT 2';
+        if (totalMenit >= 415 && totalMenit < 895) return 'SHIFT 1'; // 06:55 - 14:55
+        if (totalMenit >= 895 && totalMenit < 1375) return 'SHIFT 2'; // 14:55 - 22:55
         return 'SHIFT 3';
     }
 
@@ -880,7 +844,8 @@
         const shiftNum = typeof shift === 'string' ? (shift.includes('SHIFT') ? shift.split(' ')[1] : shift) : shift;
         localStorage.setItem('shiftAktif', shiftNum); 
         showShift(shiftNum); 
-        document.getElementById('shiftTitle').innerText = "SHIFT " + shiftNum;
+        const titleEl = document.getElementById('shiftTitle');
+        if (titleEl) titleEl.innerText = "SHIFT " + shiftNum;
 
         if (isManual) {
             if (window.autoRevertTimer) clearTimeout(window.autoRevertTimer);
