@@ -32,38 +32,39 @@
             background: var(--bg-body); 
             color: var(--text-main); 
             margin: 0; 
-            padding: 10px 15px; 
+            padding: 8px 12px; 
             min-height: 100vh; 
             box-sizing: border-box; 
             overflow-x: hidden; 
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
         .monitor-container { 
             width: 100%; 
-            min-height: min(860px, calc(100vh - 110px));
+            flex: 1;
             max-width: none; 
             margin: 0 auto; 
             background: var(--bg-container); 
             backdrop-filter: blur(20px); 
             border-radius: 16px; 
             border: 1px solid var(--border); 
-            padding: 15px 20px; 
+            padding: 12px 18px; 
             box-sizing: border-box; 
             display: flex; 
-            flex-direction: column;
-            justify-content: flex-start;
+            flex-direction: column; 
+            justify-content: space-between;
             box-shadow: 0 30px 70px rgba(0,0,0,0.4); 
-            overflow: visible;
         }
         .slider-container { 
             display: flex; 
             width: 100%; 
-            flex: 1 1 auto;
-            min-height: 620px;
+            flex-grow: 1; 
             overflow-x: hidden; 
-            overflow-y: visible;
+            overflow-y: hidden;
             scroll-snap-type: x mandatory; 
             scroll-behavior: smooth; 
+            align-items: stretch; 
         }
 
         .factory-footer {
@@ -746,13 +747,24 @@
                 `).join('');
             }
 
+            Object.values(dataShift).forEach(shiftArray => {
+                shiftArray.forEach(row => {
+                    row.realInJ4 = '-';
+                    row.realOutJ4 = '-';
+                    row.realInJ3 = '-';
+                    row.realOutJ3 = '-';
+                    row.realInJ6 = '-';
+                    row.realOutJ6 = '-';
+                });
+            });
+
             if (data.monitoring && Array.isArray(data.monitoring)) {
                 data.monitoring.forEach(item => {
                     const resetIn = cekPerluReset(item.realIn); 
                     const resetOut = cekPerluReset(item.realOut);
 
                     Object.values(dataShift).forEach(shiftArray => {
-                        let found = shiftArray.find(s => s.rit == item.rit);
+                        const found = shiftArray.find(s => Number(s.rit) === Number(item.rit));
                         if (found) {
                             found.realInJ4 = resetIn ? "-" : extractTime(item.realIn);
                             found.realOutJ4 = resetOut ? "-" : extractTime(item.realOut);
