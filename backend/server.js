@@ -209,20 +209,30 @@ io.on('connection', (socket) => {
     socket.on('QC_RELEASE_LINE', (payload) => {
         const { line, status = 'WAIT_KFG' } = payload || {};
         if (!line) return;
-        const normalizedMedia = 'FG_FULL';
-        const dataBaru = {
-            id: Math.random().toString(36).substr(2, 9),
-            line: String(line).trim().toUpperCase(),
-            lantai: resolveLineLantai(line),
-            jenisMedia: normalizedMedia,
-            waktu: new Date().toLocaleTimeString('id-ID') + ' WIB',
-            waktuEpoch: Date.now(),
-            status: status
-        };
-        antreanFG.push(dataBaru);
-        io.emit('ANTREAN_BARU_MASUK', dataBaru);
-        broadcastDataAwal();
-        console.log(`QC_RELEASE_LINE diterima untuk line ${dataBaru.line} (${dataBaru.jenisMedia})`);
+        const normalizedLine = String(line).trim().toUpperCase();
+        // Coba temukan antrean FG existing untuk line ini yang menunggu QC
+        const idx = antreanFG.findIndex(item => item.line === normalizedLine && (item.status === 'WAIT_QC' || item.status === 'WAITING'));
+        if (idx !== -1) {
+            antreanFG[idx].status = status;
+            io.emit('ANTREAN_BARU_MASUK', antreanFG[idx]);
+            broadcastDataAwal();
+            console.log(`QC_RELEASE_LINE: updated existing FG for line ${normalizedLine} -> ${status}`);
+        } else {
+            const normalizedMedia = 'FG_FULL';
+            const dataBaru = {
+                id: Math.random().toString(36).substr(2, 9),
+                line: normalizedLine,
+                lantai: resolveLineLantai(line),
+                jenisMedia: normalizedMedia,
+                waktu: new Date().toLocaleTimeString('id-ID') + ' WIB',
+                waktuEpoch: Date.now(),
+                status: status
+            };
+            antreanFG.push(dataBaru);
+            io.emit('ANTREAN_BARU_MASUK', dataBaru);
+            broadcastDataAwal();
+            console.log(`QC_RELEASE_LINE: created new FG for line ${dataBaru.line} (${dataBaru.jenisMedia})`);
+        }
     });
 
     socket.on('KFG_SELESAI_TARIK', ({ id }) => {
@@ -251,12 +261,37 @@ server.on('error', (err) => {
         console.error('Server error:', err);
     }
     process.exit(1);
-});
-
+});async function syncDataFromSheet() {
+  try {
+    const response = await axios.get('https://script.google.com/macros/s/AKfycbyo4ShU64ZaOkZ9feQH9Yl0ezLvx61FMnterGqG5SaGhGuRwWPntKpidrdrBkgtWVv2/exec');
+    
+    // Kirim data monitoring & OMG ke dashboard via socket
+    // Kita kirim objek utuh agar frontend bisa ambil 'omg' dan 'monitoring'
+    io.emit('DASHBOARD_UPDATE', response.data); 
+    
+    console.log("🚀 Data dari Sheet berhasil disinkronisasi ke Dashboard");
+  } catch (err) {
+    console.error("❌ Gagal sync:", err.message);
+  }
+}
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`=======================================================`);
     console.log(`🚀 DHS ENGINE V2.6 ONLINE - PRODUCTION GO-LIVE READY`);
-    console.log(`📡 Listening on port ${PORT}`);
-    console.log(`🏢 ALL STATIONS ACTIVATED: ${Object.keys(MASTER_USER_DB).length - 3} PACKAGING LINES LINKED`);
+    console.log(`📡 Listening on port ${PORT}`); // Ini akan menggunakan nilai PORT yang sudah diset di atas
     console.log(`=======================================================`);
+});
+
+// Endpoint untuk QC menandakan release ke KFG
+app.post('/api/request/qc-release', (req, res) => {
+    const { id } = req.body || {};
+    if (!id) return res.status(400).json({ success: false, message: 'Missing id' });
+    const idx = antreanFG.findIndex(item => item.id === id);
+    if (idx === -1) return res.status(404).json({ success: false, message: 'Task not found' });
+
+    antreanFG[idx].status = 'READY_KFG';
+    // inform clients
+    io.emit('ANTREAN_BARU_MASUK', antreanFG[idx]);
+    broadcastDataAwal();
+    console.log(`QC release processed for id ${id}`);
+    return res.json({ success: true, data: antreanFG[idx] });
 });
