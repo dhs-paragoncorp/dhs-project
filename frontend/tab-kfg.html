@@ -21,8 +21,29 @@
             --text-main: #0f172a; --text-sub: #94a3b8; --popup-bg: #ffffff;
             --nav-bg: #ffffff; --sidebar-bg: #ffffff;
         }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 15px 15px 75px 15px; display: flex; justify-content: center; min-height: 100vh; transition: 0.3s; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 15px 15px 95px 15px; display: flex; justify-content: center; min-height: 100vh; transition: 0.3s; box-sizing: border-box; overflow-x: hidden; }
         .container { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 20px; }
+
+        .factory-footer {
+            position: fixed;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%);
+            width: min(100%, 440px);
+            z-index: 5;
+            border-top: 1px solid var(--border);
+            background: rgba(15, 23, 42, 0.96);
+            padding: 10px 16px;
+            min-height: 54px;
+            box-sizing: border-box;
+        }
+        .factory-footer .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: nowrap; }
+        .factory-footer .footer-brand { display: flex; align-items: center; gap: 12px; }
+        .factory-footer .footer-logo { width: 34px; height: 34px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; background: linear-gradient(135deg, #10b981, #0f766e); color: white; }
+        .factory-footer .footer-title { font-size: 13px; font-weight: 900; color: var(--text-main); line-height: 1.1; }
+        .factory-footer .footer-subtitle { margin-top: 2px; font-size: 9px; font-weight: 700; color: var(--text-sub); }
+        .factory-footer .footer-status { display: inline-flex; align-items: center; gap: 8px; font-size: 9px; font-weight: 900; color: #86efac; text-transform: uppercase; }
+        .factory-footer .pulse-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #10b981; animation: pulse 1.8s infinite; }
         
         .header { padding: 10px 5px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 15px; }
         .menu-toggle-btn { background: none; border: none; color: var(--text-main); font-size: 26px; cursor: pointer; padding: 0; }
@@ -62,7 +83,7 @@
         .lbl-status-delivered { font-size: 11px; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 6px 12px; border-radius: 8px; }
         .empty { text-align: center; color: var(--text-sub); padding: 35px 20px; font-weight: 700; font-size: 13px; border: 2px dashed var(--border); border-radius: 14px; }
 
-        .nav-bottom { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 440px; background: var(--nav-bg); border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; padding: 10px 0; z-index: 99; }
+        .nav-bottom { position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 440px; background: var(--nav-bg); border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; padding: 10px 0; z-index: 99; }
         .nav-btn { background: none; border: none; color: var(--text-sub); font-weight: 800; font-size: 13px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .nav-btn.active { color: #38bdf8; }
 
@@ -335,13 +356,20 @@ function toggleTheme() {
     function getMediaVisual(jenis) {
         if(jenis === 'TROLI_BESAR') return { svg: svgIcons.trolley, text: 'TROLI BESAR' };
         if(jenis === 'TROLI_KECIL') return { svg: svgIcons.pallet, text: 'Pallet Kayu' };
-        return { svg: svgIcons.box, text: 'TARIK FG FULL' };
+        return { svg: svgIcons.box, text: 'KIRIM FG FULL' };
     }
 
     function kirimTroliKeLift(id) { window.tutupPopupManual(); fetch(`${API_BASE}/api/request/kirim-troli`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) }); }
     function selesaikanTugas(id) { window.tutupPopupManual(); fetch(`${API_BASE}/api/request/selesai`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) }); }
 
     socket.on('ANTREAN_BARU_MASUK', (data) => {
+        try {
+            const isQcStageFg = data && data.jenisMedia === 'FG_FULL' && (!data.status || ['WAIT_QC', 'WAITING', 'WAIT_KFG'].includes(data.status));
+            if (isQcStageFg) {
+                return;
+            }
+        } catch (_) {}
+
         activePopupId = data.id; 
         const pb = document.getElementById('pBox'); 
         const btn = document.getElementById('popBtnSubmit');
@@ -372,7 +400,9 @@ function toggleTheme() {
 
     socket.on('DATA_ANTREAN_UPDATE', (data) => {
         const boxTroli = document.getElementById('listTroli'); const boxFG = document.getElementById('listFG');
-        document.getElementById('badgeCountTroli').innerText = data.troli.length; document.getElementById('badgeCountFG').innerText = data.fg.length;
+        const fgVisible = (data.fg || []).filter(item => item.status !== 'WAIT_QC');
+        document.getElementById('badgeCountTroli').innerText = data.troli.length;
+        document.getElementById('badgeCountFG').innerText = fgVisible.length;
 
         boxTroli.innerHTML = data.troli.length === 0 ? `<div class="empty">🟢 Bersih, tidak ada request pasokan troli.</div>` : '';
         data.troli.forEach(item => {
@@ -403,8 +433,8 @@ function toggleTheme() {
             boxTroli.appendChild(div);
         });
 
-        boxFG.innerHTML = data.fg.length === 0 ? `<div class="empty">🟢 Bersih, tidak ada palet FG siap tarik.</div>` : '';
-        data.fg.forEach(item => {
+        boxFG.innerHTML = fgVisible.length === 0 ? `<div class="empty">🟢 Bersih, tidak ada palet FG siap tarik.</div>` : '';
+        fgVisible.forEach(item => {
             const visual = getMediaVisual(item.jenisMedia);
             const div = document.createElement('div'); div.className = 'action-card';
             div.innerHTML = `<div class="card-left"><div class="mini-img-icon" style="color:#f59e0b;">${visual.svg}</div><div><h4>${item.line} <span style="font-size:11px; color:#f59e0b;">(Lant. ${item.lantai})</span></h4><p class="media-lbl">${visual.text}</p></div></div><button class="btn-action btn-green" onclick="selesaikanTugas('${item.id}')">SELESAI TARIK</button>`;
@@ -419,5 +449,17 @@ socket.on('connect_error', (err) => {
     console.error("❌ Gagal terhubung:", err.message);
 });
 </script>
+<footer class="factory-footer">
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <span class="footer-logo">FQ</span>
+            <div>
+                <div class="footer-title">Factory Quality Semisolid</div>
+                <div class="footer-subtitle">@Part of ParagonCorp</div>
+            </div>
+        </div>
+        <div class="footer-status"><span class="pulse-dot"></span><span>Digital Handling System</span></div>
+    </div>
+</footer>
 </body>
 </html>

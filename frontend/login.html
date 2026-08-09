@@ -12,10 +12,28 @@
             margin: 0;
             padding: 0;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
         }
+
+        .factory-footer {
+            margin-top: 24px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+            padding: 12px 18px;
+            width: min(92vw, 680px);
+            box-sizing: border-box;
+        }
+        .factory-footer .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .factory-footer .footer-brand { display: flex; align-items: center; gap: 12px; }
+        .factory-footer .footer-logo { width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; background: linear-gradient(135deg, #10b981, #0f766e); color: white; border: 1px solid rgba(255,255,255,0.2); }
+        .factory-footer .footer-title { font-size: 15px; font-weight: 900; color: #e2e8f0; }
+        .factory-footer .footer-subtitle { margin-top: 2px; font-size: 10px; font-weight: 700; color: #94a3b8; }
+        .factory-footer .footer-status { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; color: #86efac; text-transform: uppercase; }
+        .factory-footer .pulse-dot { width: 8px; height: 8px; border-radius: 999px; background: #10b981; display: inline-block; animation: pulse 1.8s infinite; }
 
         .login-card {
             width: 100%;

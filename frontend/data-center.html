@@ -32,8 +32,8 @@
             min-height: 100vh;
             padding: 30px;
             display: flex;
-            justify-content: center;
-            align-items: flex-start;
+            flex-direction: column;
+            align-items: center;
         }
 
         .sidebar-overlay {
@@ -105,16 +105,17 @@
         }
 
         .data-container {
-            width: 100%;
-            max-width: 1100px;
+            width: min(100%, 1100px);
             background: var(--panel-bg);
             border-radius: 24px;
             border: 1px solid var(--panel-border);
             padding: 30px;
+            box-sizing: border-box;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
             backdrop-filter: blur(24px);
             position: relative;
             z-index: 1;
+            margin: 0 auto;
         }
 
         .header {
@@ -152,6 +153,7 @@
             font-size: 24px;
             font-weight: 800;
             background: linear-gradient(45deg, #00b4db, #8d99ae);
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -318,6 +320,85 @@
             flex-direction: column;
             gap: 10px;
         }
+
+        .factory-footer {
+            margin: 24px auto 0;
+            border-top: 1px solid rgba(255,255,255,0.12);
+            background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+            border-radius: 14px;
+            padding: 12px 18px;
+            max-width: 1100px;
+            box-sizing: border-box;
+            width: min(100%, 1100px);
+        }
+
+        .footer-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .footer-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #10b981, #0f766e);
+            color: white;
+            font-weight: 900;
+            font-size: 12px;
+            letter-spacing: 1px;
+            border: 1px solid rgba(255,255,255,0.17);
+        }
+
+        .footer-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: #e2e8f0;
+            line-height: 1.08;
+        }
+
+        .footer-subtitle {
+            margin-top: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            letter-spacing: 0.5px;
+        }
+
+        .footer-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #86efac;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #34d399;
+            display: inline-block;
+            animation: pulse 1.8s infinite;
+        }
+
+        @keyframes pulse {
+            70% { opacity: .45; transform: scale(.88); }
+        }
     </style>
 </head>
 <body>
@@ -349,6 +430,12 @@
     <div id="home" class="section active">
         <h3 style="margin-top:0;">Active Tasks</h3>
         <div id="active-tasks" class="grid-shortcut"></div>
+    </div>
+
+    <!-- QC Notification Popup -->
+    <div id="qcNotifPopup" style="display:none; position:fixed; right:24px; bottom:24px; background:linear-gradient(180deg, rgba(29, 78, 75, 0.95), rgba(15, 23, 42, 0.98)); border:1px solid rgba(16, 185, 129, 0.35); padding:18px; border-radius:12px; z-index:2000; width:340px; box-shadow: 0 12px 30px rgba(0,0,0,0.3);">
+        <div style="font-weight:900; font-size:16px; margin-bottom:8px; color:#ecfccb;">Notifikasi FG Full Masuk</div>
+        <div id="qcNotifText" style="color:#cbd5e1; margin-bottom:12px;">FG Full menunggu QC Release.</div>
     </div>
 
     <div id="qc-panel" class="section">
@@ -436,29 +523,48 @@
     }
 
     function requestQCRelease(line) {
-        const lantai = resolveLantaiFromLine(line);
-        const payload = { line: String(line).trim().toUpperCase(), lantai, jenisMedia: 'FG_FULL', status: 'WAIT_KFG' };
-        showStatusMessage(`QC release ${line} dikirim ke KFG...`, 'info');
-
-        fetch(`${API_BASE}/api/request/baru`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        })
-        .then(async res => {
-            const data = await res.json().catch(() => ({}));
-            if (res.ok && data.success) {
-                showStatusMessage(`QC ${line} berhasil masuk antrian KFG`, 'success');
-                if (data.data) {
-                    upsertTaskCard(data.data);
+        const normalizedLine = String(line).trim().toUpperCase();
+        showStatusMessage(`Mencari task FG untuk line ${normalizedLine}...`, 'info');
+        // Ambil status saat ini, cari FG yang menunggu QC untuk line ini
+        fetch(`${API_BASE}/api/request/status`, { method: 'GET' })
+            .then(res => res.json())
+            .then(json => {
+                const items = (json && json.data) ? [...(json.data.fg || [])] : [];
+                const match = items.find(it => it.line === normalizedLine && (it.status === 'WAIT_QC' || it.status === 'WAITING'));
+                if (match) {
+                    showStatusMessage(`Menandai task ${match.id} sebagai WAIT_KFG...`, 'info');
+                    fetch(`${API_BASE}/api/request/qc-release`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: match.id })
+                    })
+                    .then(r => r.json()).then(d => {
+                        if (d && d.success) {
+                            showStatusMessage(`QC ${normalizedLine} berhasil release ke KFG`, 'success');
+                            if (d.data) upsertTaskCard(d.data);
+                        } else {
+                            showStatusMessage(`Gagal release QC untuk ${normalizedLine}`, 'error');
+                        }
+                    }).catch(() => showStatusMessage('Gagal koneksi ke backend untuk QC release.', 'error'));
+                } else {
+                    // Tidak menemukan task existing -> buat baru sebagai fallback
+                    const lantai = resolveLantaiFromLine(line);
+                    const payload = { line: normalizedLine, lantai, jenisMedia: 'FG_FULL', status: 'WAIT_KFG' };
+                    fetch(`${API_BASE}/api/request/baru`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    })
+                    .then(r => r.json()).then(d => {
+                        if (d && d.success) {
+                            showStatusMessage(`QC ${normalizedLine} berhasil masuk antrian KFG (baru)`, 'success');
+                            if (d.data) upsertTaskCard(d.data);
+                        } else {
+                            showStatusMessage(`Gagal kirim QC ${normalizedLine}`, 'error');
+                        }
+                    }).catch(() => showStatusMessage('Gagal koneksi ke backend untuk QC release.', 'error'));
                 }
-            } else {
-                showStatusMessage(`Gagal kirim QC ${line}`, 'error');
-            }
-        })
-        .catch(() => {
-            showStatusMessage('Gagal koneksi ke backend untuk QC release.', 'error');
-        });
+            }).catch(() => showStatusMessage('Gagal ambil status server.', 'error'));
     }
 
     function setTaskPending(id) {
@@ -510,24 +616,34 @@
         document.getElementById('qc-active-tasks').innerHTML = emptyHtml;
     }
 
-    function createTaskCardElement(data, prefix = '') {
-        const card = document.createElement('div');
-        card.id = `${prefix}task-${data.id}`;
-        card.className = 'card-progress';
-        card.innerHTML = `
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-                <div>
-                    <div style="font-size:16px; font-weight:700;">${data.line}</div>
-                    <div style="font-size:12px; color:#94a3b8;">Lantai ${data.lantai || '-'} • ${getMediaText(data.jenisMedia || 'TROLI_KECIL')}</div>
-                </div>
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                    <span class="status-pill ${getStatusClass(data.status)}">${data.status}</span>
-                    <button style="background:#10b981; color:white; border:none; border-radius:10px; padding:8px 12px; cursor:pointer;" onclick="konfirmasiSelesai('${data.id}')">✅ Selesaikan</button>
-                </div>
-            </div>`;
-        return card;
+   function createTaskCardElement(data, prefix = '') {
+    const card = document.createElement('div');
+    card.id = `${prefix}task-${data.id}`;
+    card.className = 'card-progress';
+    
+    let actionButtonHtml = '';
+    
+    // Jika jenis media FG_FULL dan status masih WAITING/WAIT_QC, berikan tombol khusus QC Release
+    if (data.jenisMedia === 'FG_FULL' && (data.status === 'WAITING' || data.status === 'WAIT_QC')) {
+        actionButtonHtml = `<button style="background:#d97706; color:white; border:none; border-radius:10px; padding:8px 12px; cursor:pointer; font-weight:700;" onclick="eksekusiQCRelease('${data.id}')">🚀 Release QC</button>`;
+    } else {
+        // Untuk Troli atau FG Full yang sudah di-release QC (status READY_KFG / DELIVERED)
+        actionButtonHtml = `<button style="background:#10b981; color:white; border:none; border-radius:10px; padding:8px 12px; cursor:pointer; font-weight:700;" onclick="konfirmasiSelesai('${data.id}')">✅ Selesaikan</button>`;
     }
 
+    card.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <div>
+                <div style="font-size:16px; font-weight:700;">${data.line}</div>
+                <div style="font-size:12px; color:#94a3b8;">Lantai ${data.lantai || '-'} • ${getMediaText(data.jenisMedia)}</div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <span class="status-pill ${getStatusClass(data.status)}">${data.status}</span>
+                ${actionButtonHtml}
+            </div>
+        </div>`;
+    return card;
+}
     function upsertTaskCard(data) {
         activeTaskMap.set(data.id, data);
 
@@ -542,8 +658,9 @@
             activeContainer.appendChild(cardHtml);
         }
 
-        // Hanya tampilkan di QC panel jika status benar-benar WAIT_KFG
-        if (data.status === 'WAIT_KFG') {
+        // QC panel harus menampilkan handoff operator -> QC (WAIT_QC / WAITING) dan release-dengan WAIT_KFG
+        const isQcVisibleStatus = ['WAIT_QC', 'WAITING', 'WAIT_KFG'].includes(data.status);
+        if (isQcVisibleStatus && data.jenisMedia === 'FG_FULL') {
             const existingQcCard = document.getElementById(`qc-task-${data.id}`);
             const qcCardHtml = createTaskCardElement(data, 'qc-');
             if (existingQcCard) {
@@ -552,7 +669,7 @@
                 qcContainer.appendChild(qcCardHtml);
             }
         } else {
-            // jika sebelumnya ada card QC tapi sekarang bukan WAIT_KFG, hapus
+            // jika sebelumnya ada card QC tapi sekarang bukan status QC, hapus
             const prevQc = document.getElementById(`qc-task-${data.id}`);
             if (prevQc) prevQc.remove();
         }
@@ -574,7 +691,7 @@
         const countLabel = document.getElementById('qcReleaseCount');
         container.innerHTML = '';
         qcContainer.innerHTML = '';
-        const items = [...data.troli, ...data.fg];
+        const items = [...(data.troli || []), ...(data.fg || [])];
 
         if (!items || items.length === 0) {
             renderEmptyActiveTasks();
@@ -583,10 +700,11 @@
         }
 
         items.forEach(item => upsertTaskCard(item));
-        // Hitung tugas yang relevan untuk QC: semua FG_FULL plus yang explicit WAIT_KFG
-        const waitingCount = items.filter(item => item.status === 'WAIT_KFG' || item.jenisMedia === 'FG_FULL').length;
+
+        const qcTasks = items.filter(item => (item.jenisMedia === 'FG_FULL') && ['WAIT_QC', 'WAITING', 'WAIT_KFG'].includes(item.status));
+        const waitingCount = qcTasks.filter(item => item.status === 'WAIT_KFG' || item.status === 'WAIT_QC' || item.status === 'WAITING').length;
         countLabel.innerText = `${waitingCount} tugas WAIT_KFG`;
-        const qcTasks = items.filter(item => item.status === 'WAIT_KFG' || item.jenisMedia === 'FG_FULL');
+
         if (qcTasks.length === 0) {
             qcContainer.innerHTML = `<div class="empty-history" style="padding: 30px;">Tidak ada tugas WAIT_KFG saat ini.</div>`;
         } else {
@@ -651,6 +769,7 @@
         });
     }
 
+    // Footer status is rendered via static HTML already in DOM.
     socket.on('connect', () => {
         console.log('Socket connected ke DHS server');
     });
@@ -659,10 +778,32 @@
         console.warn('Socket connection error:', error);
     });
 
-    socket.on('DATA_ANTREAN_UPDATE', updateActiveTasks);
+    const qcNotifShownIds = new Set();
+
+    socket.on('DATA_ANTREAN_UPDATE', data => {
+        updateActiveTasks(data);
+        const fgItems = [...(data.fg || [])];
+        fgItems.forEach(item => {
+            if (item && item.jenisMedia === 'FG_FULL' && ['WAIT_QC','WAITING','WAIT_KFG'].includes(item.status)) {
+                if (!qcNotifShownIds.has(item.id)) {
+                    qcNotifShownIds.add(item.id);
+                    showQcNotif(`${item.line} menunggu QC Release`, item.id);
+                }
+            }
+        });
+    });
+
     socket.on('ANTREAN_BARU_MASUK', data => {
         upsertTaskCard(data);
         showStatusMessage(`Task baru diterima: ${data.line} (${data.status})`, 'info');
+        try {
+            if (data && data.jenisMedia === 'FG_FULL' && (data.status === 'WAIT_QC' || data.status === 'WAITING' || data.status === 'WAIT_KFG')) {
+                if (!qcNotifShownIds.has(data.id)) {
+                    qcNotifShownIds.add(data.id);
+                    showQcNotif(`${data.line} menunggu QC Release`, data.id);
+                }
+            }
+        } catch (e) { console.error(e); }
     });
     socket.on('ANTREAN_SELESAI_SYNC', id => {
         removeTaskCard(id);
@@ -703,6 +844,92 @@
     }
 
     generateQCButtons();
+    function eksekusiQCRelease(id) {
+    showStatusMessage(`Memproses QC Release untuk ID ${id}...`, 'info');
+    
+    fetch(`${API_BASE}/api/request/qc-release`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id })
+    })
+    .then(async res => {
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success) {
+            showStatusMessage(`QC Release berhasil! Barang masuk antrean KFG.`, 'success');
+        } else {
+            showStatusMessage(`Gagal melakukan QC Release.`, 'error');
+        }
+    })
+    .catch(() => {
+        showStatusMessage('Gagal koneksi ke backend untuk QC Release.', 'error');
+    });
+}
+
+// Alarm & QC notification helpers
+let qcAlarmOsc = null, qcAlarmCtx = null;
+function playQcAlarm() {
+    try {
+        if (qcAlarmOsc) return;
+        qcAlarmCtx = new (window.AudioContext || window.webkitAudioContext)();
+        qcAlarmOsc = qcAlarmCtx.createOscillator();
+        const gain = qcAlarmCtx.createGain();
+        qcAlarmOsc.type = 'sine';
+        qcAlarmOsc.frequency.setValueAtTime(880, qcAlarmCtx.currentTime);
+        gain.gain.setValueAtTime(0.0001, qcAlarmCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.2, qcAlarmCtx.currentTime + 0.05);
+        qcAlarmOsc.connect(gain); gain.connect(qcAlarmCtx.destination);
+        qcAlarmOsc.start();
+        qcAlarmOsc._pulse = setInterval(() => {
+            gain.gain.cancelScheduledValues(qcAlarmCtx.currentTime);
+            gain.gain.setValueAtTime(0.0001, qcAlarmCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.2, qcAlarmCtx.currentTime + 0.05);
+            setTimeout(() => { gain.gain.exponentialRampToValueAtTime(0.0001, qcAlarmCtx.currentTime + 0.6); }, 500);
+        }, 800);
+        qcAlarmOsc._autoStop = setTimeout(() => { stopQcAlarm(); }, 10000);
+    } catch (e) { console.error('QC Alarm error', e); }
+}
+function stopQcAlarm() {
+    try {
+        if (!qcAlarmOsc) return;
+        clearInterval(qcAlarmOsc._pulse);
+        if (qcAlarmOsc._autoStop) { clearTimeout(qcAlarmOsc._autoStop); qcAlarmOsc._autoStop = null; }
+        qcAlarmOsc.stop(); qcAlarmOsc.disconnect(); qcAlarmOsc = null;
+        if (qcAlarmCtx && typeof qcAlarmCtx.close === 'function') qcAlarmCtx.close(); qcAlarmCtx = null;
+    } catch(_){}
+}
+
+let qcPopupAutoTimer = null;
+function showQcNotif(message, requestId) {
+    const popup = document.getElementById('qcNotifPopup');
+    const txt = document.getElementById('qcNotifText');
+    if(!popup || !txt) return;
+    txt.innerText = message || 'FG Full menunggu QC Release.';
+    popup.style.display = 'block';
+    playQcAlarm();
+
+    if (qcPopupAutoTimer) clearTimeout(qcPopupAutoTimer);
+    qcPopupAutoTimer = setTimeout(() => {
+        popup.style.display = 'none';
+        stopQcAlarm();
+        qcPopupAutoTimer = null;
+    }, 10000);
+}
 </script>
+
+<footer class="factory-footer">
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <span class="footer-logo">FQ</span>
+            <div>
+                <div class="footer-title">Factory Quality Semisolid</div>
+                <div class="footer-subtitle">@Part of ParagonCorp</div>
+            </div>
+        </div>
+        <div class="footer-status">
+            <span class="pulse-dot"></span>
+            <span id="footerLiveText">Digital Handling System</span>
+        </div>
+    </div>
+</footer>
 </body>
 </html>

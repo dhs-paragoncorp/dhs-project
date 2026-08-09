@@ -13,8 +13,24 @@
             --bg-body: #0b0f19; --bg-card: #131c2e; --border: #1e293b;
             --text-main: #f8fafc; --text-sub: #94a3b8; --sidebar-bg: #0f172a;
         }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 20px; display: flex; justify-content: center; min-height: 100vh; transition: 0.3s; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; transition: 0.3s; box-sizing: border-box; }
         .container { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 24px; }
+
+        .factory-footer {
+            width: min(100%, 440px);
+            margin-top: 22px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.45);
+            padding: 12px 16px;
+        }
+        .factory-footer .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .factory-footer .footer-brand { display: flex; align-items: center; gap: 12px; }
+        .factory-footer .footer-logo { width: 40px; height: 40px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; background: linear-gradient(135deg, #10b981, #0f766e); color: white; }
+        .factory-footer .footer-title { font-size: 15px; font-weight: 900; color: var(--text-main); line-height: 1.1; }
+        .factory-footer .footer-subtitle { margin-top: 2px; font-size: 11px; font-weight: 700; color: var(--text-sub); }
+        .factory-footer .footer-status { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; color: #0f766e; text-transform: uppercase; }
+        .factory-footer .pulse-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #10b981; animation: pulse 1.8s infinite; }
         
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
         .header-left { display: flex; align-items: center; gap: 12px; }
@@ -131,7 +147,7 @@
         <div class="grid-selector">
             <div class="select-card card-blue" onclick="kirimRequest('TROLI_BESAR')"><div id="iconTroliBesar"></div><span>Troli Besar</span></div>
             <div class="select-card card-green" onclick="kirimRequest('TROLI_KECIL')"><div id="iconTroliKecil"></div><span>Pallet Kayu</span></div>
-            <div class="select-card card-orange" onclick="kirimRequest('FG_FULL')"><div id="iconFgFull"></div><span>Tarik FG Full</span></div>
+            <div class="select-card card-orange" onclick="kirimRequest('FG_FULL')"><div id="iconFgFull"></div><span>Kirim FG Full</span></div>
         </div>
     </div>
 
@@ -204,10 +220,14 @@
         const pending = { jenisMedia: jenis, line: sessionUser.line, lantai: sessionUser.lantai, createdAt: Date.now() };
         localStorage.setItem(`dhs_pending_${sessionUser.username}`, JSON.stringify(pending));
 
+        // Jika FG_FULL, tandai sebagai menunggu QC terlebih dahulu
+        const payload = { line: sessionUser.line, lantai: sessionUser.lantai, jenisMedia: jenis };
+        if (jenis === 'FG_FULL') payload.status = 'WAIT_QC';
+
         fetch(`${API_BASE}/api/request/baru`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ line: sessionUser.line, lantai: sessionUser.lantai, jenisMedia: jenis })
+            body: JSON.stringify(payload)
         }).catch(err => alert("Gagal memanggil bantuan logistik."));
     }
 
@@ -230,7 +250,7 @@
     function getMediaLabel(jenis) {
         if(jenis === 'TROLI_BESAR') return { text: 'Troli Besar', icon: icons.trolley };
         if(jenis === 'TROLI_KECIL') return { text: 'Pallet Kayu', icon: icons.pallet };
-        return { text: 'Tarik FG Full', icon: icons.box };
+        return { text: 'Kirim FG Full', icon: icons.box };
     }
 
     function tambahKeRiwayatLokal(item) {
@@ -290,11 +310,20 @@
                     }
                 }
                 
-                if(item.jenisMedia === 'FG_FULL') {
-                tombolHtml = `<button class="btn-confirm-terima" onclick="window.eksekusiTerimaFisik('${item.id}', '${media.text}')">${icons.check} Confirm Terima</button>`;
-                // Jika masih menunggu, tampilkan label WAIT KFG
-                if(item.status === 'WAITING') { txtStatus = 'WAIT KFG'; }
-            }
+                // Di dalam perulangan filtered.forEach(item => { ... })
+if(item.jenisMedia === 'FG_FULL') {
+    // Jika status masih menunggu QC / belum di-release QC
+    if(item.status === 'WAITING' || item.status === 'WAIT_QC') {
+        txtStatus = 'WAIT QC';
+        badgeClass = 'status-wait';
+        tombolHtml = `<span style="font-size:11px; color:var(--text-sub); font-weight:700;">Menunggu QC Release</span>`;
+    } else if(item.status === 'READY_KFG' || item.status === 'DELIVERED') {
+        // Setelah QC Release, baru tombol Confirm Terima untuk KFG muncul
+        txtStatus = 'READY KFG';
+        badgeClass = 'status-deliv';
+        tombolHtml = `<button class="btn-confirm-terima" onclick="window.eksekusiTerimaFisik('${item.id}', '${media.text}')">${icons.check} Confirm Terima</button>`;
+    }
+}
                 boxAktif.innerHTML += `
                     <div class="log-item">
                         <div class="log-left">${media.icon} <span>${media.text}</span></div>
@@ -394,5 +423,17 @@
         stopAlarm();
     }
 </script>
+<footer class="factory-footer">
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <span class="footer-logo">FQ</span>
+            <div>
+                <div class="footer-title">Factory Quality Semisolid</div>
+                <div class="footer-subtitle">@Part of ParagonCorp</div>
+            </div>
+        </div>
+        <div class="footer-status"><span class="pulse-dot"></span><span>Digital Handling System</span></div>
+    </div>
+</footer>
 </body>
 </html>

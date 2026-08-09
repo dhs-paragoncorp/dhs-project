@@ -33,13 +33,14 @@
             color: var(--text-main); 
             margin: 0; 
             padding: 10px 15px; 
-            height: 100vh; 
+            min-height: 100vh; 
             box-sizing: border-box; 
-            overflow: hidden; 
+            overflow-x: hidden; 
+            overflow-y: auto;
         }
         .monitor-container { 
             width: 100%; 
-            height: 100%; 
+            min-height: min(860px, calc(100vh - 110px));
             max-width: none; 
             margin: 0 auto; 
             background: var(--bg-container); 
@@ -49,18 +50,36 @@
             padding: 15px 20px; 
             box-sizing: border-box; 
             display: flex; 
-            flex-direction: column; 
-            justify-content: space-between;
+            flex-direction: column;
+            justify-content: flex-start;
             box-shadow: 0 30px 70px rgba(0,0,0,0.4); 
+            overflow: visible;
         }
         .slider-container { 
             display: flex; 
             width: 100%; 
-            flex-grow: 1;
+            flex: 1 1 auto;
+            min-height: 620px;
             overflow-x: hidden; 
+            overflow-y: visible;
             scroll-snap-type: x mandatory; 
             scroll-behavior: smooth; 
         }
+
+        .factory-footer {
+            margin-top: auto;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: rgba(30, 41, 59, 0.45);
+            padding: 12px 18px;
+        }
+        .factory-footer .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .factory-footer .footer-brand { display: flex; align-items: center; gap: 12px; }
+        .factory-footer .footer-logo { width: 40px; height: 40px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; background: linear-gradient(135deg, #10b981, #0f766e); color: white; }
+        .factory-footer .footer-title { font-size: 15px; font-weight: 800; color: var(--text-main); line-height: 1.1; }
+        .factory-footer .footer-subtitle { margin-top: 2px; font-size: 11px; font-weight: 700; color: var(--text-sub); }
+        .factory-footer .footer-status { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; color: #86efac; text-transform: uppercase; }
+        .factory-footer .pulse-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #10b981; animation: pulse 1.8s infinite; }
         /* HEADER */
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; }
         .header-title-area { display: flex; align-items: center; gap: 15px; }
@@ -92,12 +111,12 @@
 
         /* WORKSPACE SPLIT */
         .workspace-split { display: grid; grid-template-columns: minmax(340px, 1.65fr) minmax(320px, 1fr); gap: 20px; align-items: start; }
-        .dashboard-split-left { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-        .column-section { background: rgba(15, 23, 42, 0.15); border: 1px solid var(--border); border-radius: 20px; padding: 15px; min-height: 320px; }
-        .column-header { font-size: 14px; font-weight: 900; letter-spacing: 0.5px; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 2px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+        .dashboard-split-left { display: grid; grid-template-columns: repeat(2, minmax(300px, 1fr)); gap: 12px; align-items: stretch; }
+        .column-section { background: rgba(15, 23, 42, 0.15); border: 1px solid var(--border); border-radius: 20px; padding: 10px; min-height: auto; }
+        .column-header { font-size: 14px; font-weight: 900; letter-spacing: 0.5px; padding-bottom: 7px; margin-bottom: 8px; border-bottom: 2px solid #334155; display: flex; justify-content: space-between; align-items: center; }
         
-        .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
-        .vertical-req-card { background: #ffffff; color: #0f172a; border-radius: 20px; padding: 15px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); position: relative; border-top: 6px solid #3b82f6; }
+        .grid-cards { display: grid; grid-template-columns: repeat(2, minmax(210px, 1fr)); gap: 10px; align-content: start; }
+        .vertical-req-card { background: #ffffff; color: #0f172a; border-radius: 20px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); position: relative; border-top: 6px solid #3b82f6; }
         
         .floor-tag { position: absolute; top: 0; left: 15px; transform: translateY(-50%); font-size: 9px; font-weight: 900; padding: 4px 10px; border-radius: 5px; color: white; text-transform: uppercase; }
         .floor-1-bg { background: #3b82f6; }
@@ -136,10 +155,10 @@
 
         .history-table td { padding: 7px 3px; border: 1px solid #cbd5e1; font-size: 13px; }
 
-        .slider-container { display: flex; width: 100%; flex-grow: 1; overflow-x: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; align-items: center; }
-        .board { min-width: 100%; width: 100%; scroll-snap-align: start; box-sizing: border-box; }
-        .board-inner { width: 100%; margin: 0 auto; display: grid; gap: 8px; box-sizing: border-box; padding: 0 5px; }
-        .board h2 { margin: 0 0 8px 0; font-size: 18px; }
+        .slider-container { display: flex; width: 100%; flex-grow: 1; overflow-x: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; align-items: flex-start; }
+        .board { flex: 0 0 100%; min-width: 100%; width: 100%; min-height: auto; scroll-snap-align: start; box-sizing: border-box; overflow: visible; align-self: flex-start; }
+        .board-inner { width: 100%; min-height: auto; margin: 0 auto; display: block; box-sizing: border-box; padding: 0 5px; overflow: visible; }
+        .board h2 { margin: 0 0 6px 0; font-size: 18px; line-height: 1.1; }
         .dots { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 100; }
         .dot { width: 10px; height: 10px; background: rgba(148,163,184,0.35); border-radius: 50%; cursor: pointer; transition: background 0.2s ease; }
         .dot.active { background: #38bdf8; }
@@ -577,6 +596,15 @@
     }
 
     socket.on('ANTREAN_BARU_MASUK', (data) => {
+        try {
+            const isQcStageFg = data && data.jenisMedia === 'FG_FULL' && (!data.status || ['WAIT_QC', 'WAITING', 'WAIT_KFG'].includes(data.status));
+            if (isQcStageFg) {
+                // operator -> QC: jangan tampilkan popup ke KFG
+                return;
+            }
+        } catch(_) {}
+
+        // Only show KFG popup for task that passed QC release, not for operator to QC hand-off
         const info = getMediaLabel(data.jenisMedia);
         document.getElementById('popEmoji').innerText = info.emoji;
         document.getElementById('popFloorLine').innerText = data.line;
@@ -594,8 +622,9 @@
         
         document.getElementById('statTroliLnt1').innerText = data.troli.filter(item => item.lantai == 1).length;
         document.getElementById('statTroliLnt2').innerText = data.troli.filter(item => item.lantai == 2).length;
-        document.getElementById('statFGLnt1').innerText = data.fg.filter(item => item.lantai == 1).length;
-        document.getElementById('statFGLnt2').innerText = data.fg.filter(item => item.lantai == 2).length;
+        // Untuk dashboard KFG, hitung FG yang sudah dilewatkan QC (tidak termasuk WAIT_QC)
+        document.getElementById('statFGLnt1').innerText = data.fg.filter(item => item.lantai == 1 && item.status !== 'WAIT_QC').length;
+        document.getElementById('statFGLnt2').innerText = data.fg.filter(item => item.lantai == 2 && item.status !== 'WAIT_QC').length;
 
         if(data.troli.length === 0) {
             cTroli.innerHTML = `<div class="empty-state">🟢 JALUR AMAN: Tidak ada antrean pasokan troli.</div>`;
@@ -634,7 +663,9 @@
             cFG.innerHTML = `<div class="empty-state">🟢 POKAYOKE: Belum ada palet FG siap tarik.</div>`;
         } else {
             cFG.innerHTML = '';
-            data.fg.forEach(item => {
+            // Tampilkan hanya FG yang bukan dalam status WAIT_QC (operator->QC)
+            const fgToShow = data.fg.filter(item => item.status !== 'WAIT_QC');
+            fgToShow.forEach(item => {
                 const visual = getMediaLabel(item.jenisMedia);
                 let btnHtml = item.lantai == 1 ? `<button class="btn-tv-done" onclick="window.tvSelesaiInstanLnt1('${item.id}')">✓ Sudah Diterima</button>` : '';
                 let waktuBersih = (item.waktu || '').replace('WIB WIB', 'WIB').replace('WIB', '').trim();
@@ -648,7 +679,7 @@
                         <div class="media-name">${visual.text}</div>
                         <div class="timer-text" id="timer-${item.id}">⏰ 00:00</div>
                         <div class="time-footer">${waktuBersih}</div>
-                        <span class="status-badge-inline" style="background:#d97706">WAIT KFG</span>
+                        <span class="status-badge-inline" style="background:#d97706">${item.status === 'READY_KFG' ? 'READY KFG' : item.status}</span>
                         ${btnHtml}
                     </div>`;
                 
@@ -870,5 +901,17 @@
         }
     }, 30000);
 </script>
+<footer class="factory-footer">
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <span class="footer-logo">FQ</span>
+            <div>
+                <div class="footer-title">Factory Quality Semisolid</div>
+                <div class="footer-subtitle">@Part of ParagonCorp</div>
+            </div>
+        </div>
+        <div class="footer-status"><span class="pulse-dot"></span><span>Digital Handling System</span></div>
+    </div>
+</footer>
 </body>
 </html>
