@@ -322,16 +322,15 @@
                 
                 // Di dalam perulangan filtered.forEach(item => { ... })
 if(item.jenisMedia === 'FG_FULL') {
-    // Jika status masih menunggu QC / belum di-release QC
+    // KFG tidak perlu tombol Confirm Terima di tab operator; cukup tampilkan status saja
     if(item.status === 'WAITING' || item.status === 'WAIT_QC') {
         txtStatus = 'WAIT QC';
         badgeClass = 'status-wait';
         tombolHtml = `<span style="font-size:11px; color:var(--text-sub); font-weight:700;">Menunggu QC Release</span>`;
     } else if(item.status === 'READY_KFG' || item.status === 'DELIVERED') {
-        // Setelah QC Release, baru tombol Confirm Terima untuk KFG muncul
         txtStatus = 'READY KFG';
         badgeClass = 'status-deliv';
-        tombolHtml = `<button class="btn-confirm-terima" onclick="window.eksekusiTerimaFisik('${item.id}', '${media.text}')">${icons.check} Confirm Terima</button>`;
+        tombolHtml = '';
     }
 }
                 boxAktif.innerHTML += `
@@ -355,7 +354,14 @@ if(item.jenisMedia === 'FG_FULL') {
                 // Cari item yang cocok untuk line/lantai/jenisMedia dan sudah DI LIFT (DELIVERED)
                 const matched = gabung.find(it => it.line === pending.line && it.lantai === pending.lantai && it.jenisMedia === pending.jenisMedia && it.status === 'DELIVERED');
                 if(matched) {
-                    showNotifPopup(`${getMediaLabel(matched.jenisMedia).text} sudah di lift. Terima fisik sekarang.`, matched.id);
+                    const isFgFull = matched.jenisMedia === 'FG_FULL';
+                    showNotifPopup(
+                        isFgFull
+                            ? `${getMediaLabel(matched.jenisMedia).text} sudah di lift.`
+                            : `${getMediaLabel(matched.jenisMedia).text} sudah di lift. Terima fisik sekarang.`,
+                        matched.id,
+                        matched.jenisMedia
+                    );
                 }
             } catch (e) { console.error(e); }
         });
@@ -406,22 +412,25 @@ if(item.jenisMedia === 'FG_FULL') {
         } catch(_){}
     }
 
-    function showNotifPopup(message, requestId) {
+    function showNotifPopup(message, requestId, jenisMedia = null) {
         const popup = document.getElementById('notifPopup');
         const txt = document.getElementById('notifPopupText');
-        if(!popup || !txt) return;
+        const btnAcknow = document.getElementById('notifAcknow');
+        const btnSnooze = document.getElementById('notifSnooze');
+        if(!popup || !txt || !btnAcknow || !btnSnooze) return;
         txt.innerText = message || 'Troli sudah di lift.';
+        const isFgFull = jenisMedia === 'FG_FULL';
+        btnAcknow.style.display = isFgFull ? 'none' : 'inline-block';
+        btnSnooze.style.display = 'inline-block';
         popup.style.display = 'block';
         playAlarm();
         // Setup buttons
-        document.getElementById('notifAcknow').onclick = () => {
-            // ketika user klik terima, panggil endpoint selesai untuk requestId
+        btnAcknow.onclick = () => {
             if(requestId) window.eksekusiTerimaFisik(requestId, 'Troli');
             closeNotifPopup();
-            try { localStorage.removeItem(`dhs_pending_${sessionUser.username}`); } catch(_){}
+            try { localStorage.removeItem(`dhs_pending_${sessionUser.username}`); } catch(_){ }
         };
-        document.getElementById('notifSnooze').onclick = () => {
-            // tunda: hentikan suara selama 10 detik lalu mainkan lagi
+        btnSnooze.onclick = () => {
             stopAlarm();
             setTimeout(() => { playAlarm(); }, 10000);
         };
