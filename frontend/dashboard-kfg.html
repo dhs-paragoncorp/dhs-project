@@ -699,9 +699,20 @@
             const statusClass = (item.status === 'READY_KFG' || item.status === 'DELIVERED') ? 'status-ready' : 'status-wait';
             let btnHtml = item.lantai == 1 ? `<button class="btn-tv-done" onclick="window.tvSelesaiInstanLnt1('${item.id}')">✓ Sudah Diterima</button>` : '';
             
-            let rawWaktu = (item.jenisMedia === 'FG_FULL' && item.waktuRelease && item.waktuRelease !== '-') ? item.waktuRelease : item.waktu;
-            let waktuBersih = (rawWaktu || '').replace('WIB WIB', 'WIB').replace('WIB', '').trim();
-            if (waktuBersih) waktuBersih += ' WIB';
+            // Format ulang waktu berdasarkan epoch agar akurat sesuai jam lokal perangkat
+            let epochValid = item.waktuEpoch; 
+            if (item.jenisMedia === 'FG_FULL') {
+                epochValid = item.waktuReleaseEpoch || parseWaktuToEpoch(item.waktuRelease) || item.waktuEpoch;
+            }
+
+            const now = Date.now();
+            if (!epochValid || Math.abs(now - epochValid) > 86400000) epochValid = now;
+
+            // Buat string jam lokal yang bersih dari epoch
+            const dateObj = new Date(epochValid);
+            const tanggalStr = dateObj.toLocaleDateString('id-ID');
+            const jamStr = dateObj.toLocaleTimeString('id-ID');
+            const waktuBersih = `${tanggalStr} ${jamStr} WIB`;
 
             container.innerHTML += `
                 <div class="vertical-hero-card">
@@ -716,13 +727,6 @@
                 </div>
             `;
 
-            let epochValid = item.waktuEpoch; 
-            if (item.jenisMedia === 'FG_FULL') {
-                epochValid = item.waktuReleaseEpoch || parseWaktuToEpoch(item.waktuRelease) || item.waktuEpoch;
-            }
-
-            const now = Date.now();
-            if (!epochValid || Math.abs(now - epochValid) > 86400000) epochValid = now;
             startTimer(item.id, epochValid);
         });
     }
