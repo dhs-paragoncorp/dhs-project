@@ -448,14 +448,15 @@
         <div id="qc-active-tasks" class="grid-shortcut"></div>
     </div>
 
-    <div id="history" class="section">
-        <h3 style="margin-top:0;">History Log</h3>
+    <div id="history" class="section active">
+        <h3 style="margin-top:0;">History Log & Rekam Jejak Produksi</h3>
         <div class="table-wrapper">
             <table>
                 <thead>
                     <tr>
-                        <th>Waktu Panggil</th>
-                        <th>Waktu Kelar</th>
+                        <th>Waktu Minta</th>
+                        <th>Waktu QC Release</th>
+                        <th>Waktu Selesai</th>
                         <th>Lokasi</th>
                         <th>Jenis Media</th>
                         <th>Status</th>
@@ -463,13 +464,12 @@
                 </thead>
                 <tbody id="historyTableBody">
                     <tr>
-                        <td colspan="5" class="empty-history">Belum ada riwayat aktivitas hari ini.</td>
+                        <td colspan="6" class="empty-history">Belum ada riwayat aktivitas hari ini.</td>
                     </tr>
                 </tbody>
             </table>
         </div>
     </div>
-</div>
 
 <script>
     const API_BASE = DATA_CENTER_API_BASE;
@@ -752,15 +752,21 @@
         tbody.innerHTML = '';
 
         if (!historyData || historyData.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="empty-history">Belum ada riwayat aktivitas hari ini.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="empty-history">Belum ada riwayat aktivitas hari ini.</td></tr>`;
             return;
         }
 
         historyData.forEach(item => {
             const tr = document.createElement('tr');
+            
+            let waktuMinta = item.waktu || '-';
+            let waktuRelease = item.waktuRelease && item.waktuRelease !== '-' ? item.waktuRelease : '-';
+            let waktuSelesai = item.waktuSelesai || '-';
+
             tr.innerHTML = `
-                <td style="font-family: monospace; color: #94A3B8;">${item.waktu}</td>
-                <td style="font-family: monospace; color: #10b981;">${item.waktuSelesai || '-'}</td>
+                <td style="font-family: monospace; color: #94A3B8; font-size: 11px;">${waktuMinta}</td>
+                <td style="font-family: monospace; color: #0ea5e9; font-size: 11px;">${waktuRelease}</td>
+                <td style="font-family: monospace; color: #10b981; font-size: 11px;">${waktuSelesai}</td>
                 <td><span class="badge-floor b-l${item.lantai}">L${item.lantai}</span> <strong>${item.line}</strong></td>
                 <td style="color: #F1F5F9; font-weight: 600;">${getMediaText(item.jenisMedia)}</td>
                 <td><span style="color: #38ef7d; font-weight: 700;">🟢 SELESAI</span></td>
@@ -768,7 +774,6 @@
             tbody.appendChild(tr);
         });
     }
-
     // Footer status is rendered via static HTML already in DOM.
     socket.on('connect', () => {
         console.log('Socket connected ke DHS server');

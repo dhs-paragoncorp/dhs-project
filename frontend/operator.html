@@ -212,24 +212,34 @@
     function logoutSistem() { localStorage.clear(); window.location.href = 'login.html'; }
 
     function kirimRequest(jenis) {
-        if ((jenis === 'TROLI_BESAR' || jenis === 'TROLI_KECIL') && adakahTroliAktif) {
-            alert("❌ Request Ditolak! Masih ada antrean TROLI yang aktif / berjalan.");
-            return;
-        }
-        // Simpan marker pending di localStorage agar notifikasi muncul hanya di tab peminta
-        const pending = { jenisMedia: jenis, line: sessionUser.line, lantai: sessionUser.lantai, createdAt: Date.now() };
-        localStorage.setItem(`dhs_pending_${sessionUser.username}`, JSON.stringify(pending));
-
-        // Jika FG_FULL, tandai sebagai menunggu QC terlebih dahulu
-        const payload = { line: sessionUser.line, lantai: sessionUser.lantai, jenisMedia: jenis };
-        if (jenis === 'FG_FULL') payload.status = 'WAIT_QC';
-
-        fetch(`${API_BASE}/api/request/baru`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        }).catch(err => alert("Gagal memanggil bantuan logistik."));
+    if ((jenis === 'TROLI_BESAR' || jenis === 'TROLI_KECIL') && adakahTroliAktif) {
+        alert("❌ Request Ditolak! Masih ada antrean TROLI yang aktif / berjalan.");
+        return;
     }
+    
+    // Pastikan timestamp murni menggunakan waktu detik ini secara real-time
+    const currentEpoch = Date.now(); 
+
+    const pending = { 
+        jenisMedia: jenis, 
+        line: sessionUser.line, 
+        lantai: sessionUser.lantai, 
+        createdAt: currentEpoch 
+    };
+    
+    localStorage.setItem(`dhs_pending_${sessionUser.username}`, JSON.stringify(pending));
+
+    fetch(`${API_BASE}/api/request/baru`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            line: sessionUser.line, 
+            lantai: sessionUser.lantai, 
+            jenisMedia: jenis,
+            waktuEpoch: currentEpoch // Kirim secara eksplisit ke backend
+        })
+    }).catch(err => alert("Gagal memanggil bantuan logistik."));
+}
 
     window.eksekusiTerimaFisik = function(id, textLabel) {
         fetch(`${API_BASE}/api/request/selesai`, {

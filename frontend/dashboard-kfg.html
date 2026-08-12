@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DHS v1.0 • Dashboard KFG TV Premium</title>
+    <title>DHS • Dashboard KFG Semisolid</title>
     <script>
         const DASHBOARD_KFG_API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
             ? 'http://localhost:3000'
@@ -12,27 +12,21 @@
     </script>
     <style>
         :root {
-            --bg-body: radial-gradient(circle at top, #0f172a, #020617);
-            --bg-container: rgba(30, 41, 59, 0.25);
-            --border: rgba(255, 255, 255, 0.06);
-            --text-main: #ffffff; --text-sub: #94a3b8;
-            --card-bg: #ffffff; --card-border: #cbd5e1;
-            --nav-bg: #1e293b; --sidebar-bg: #0f172a;
+            --bg-body: radial-gradient(circle at top, #060913, #020617);
+            --panel-bg: rgba(15, 23, 42, 0.85);
+            --panel-border: rgba(56, 189, 248, 0.3);
+            --text-main: #f8fafc; 
+            --text-sub: #94a3b8;
         }
-        [data-theme="light"] {
-            --bg-body: linear-gradient(to bottom, #f4f6f9, #e2e8f0);
-            --bg-container: #ffffff;
-            --border: #cbd5e1;
-            --text-main: #0f172a; --text-sub: #64748b;
-            --card-bg: #ffffff; --card-border: #cbd5e1;
-            --nav-bg: #ffffff; --sidebar-bg: #ffffff;
-        }
+
+        * { box-sizing: border-box; }
+
         body { 
-            font-family: 'Segoe UI', sans-serif; 
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; 
             background: var(--bg-body); 
             color: var(--text-main); 
             margin: 0; 
-            padding: 8px 12px; 
+            padding: 16px 20px; 
             min-height: 100vh; 
             box-sizing: border-box; 
             overflow-x: hidden; 
@@ -40,137 +34,175 @@
             display: flex;
             flex-direction: column;
         }
+
         .monitor-container { 
             width: 100%; 
             flex: 1;
             max-width: none; 
             margin: 0 auto; 
-            background: var(--bg-container); 
-            backdrop-filter: blur(20px); 
-            border-radius: 16px; 
-            border: 1px solid var(--border); 
-            padding: 12px 18px; 
+            background: var(--panel-bg); 
+            backdrop-filter: blur(30px); 
+            border-radius: 24px; 
+            border: 2px solid var(--panel-border); 
+            padding: 20px 24px; 
             box-sizing: border-box; 
             display: flex; 
             flex-direction: column; 
             justify-content: space-between;
-            box-shadow: 0 30px 70px rgba(0,0,0,0.4); 
-        }
-        .slider-container { 
-            display: flex; 
-            width: 100%; 
-            flex-grow: 1; 
-            overflow-x: hidden; 
-            overflow-y: hidden;
-            scroll-snap-type: x mandatory; 
-            scroll-behavior: smooth; 
-            align-items: stretch; 
+            box-shadow: 0 40px 90px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.15); 
         }
 
-        .factory-footer {
-            margin-top: auto;
-            border-radius: 14px;
-            border: 1px solid var(--border);
-            background: rgba(30, 41, 59, 0.45);
-            padding: 12px 18px;
-        }
-        .factory-footer .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-        .factory-footer .footer-brand { display: flex; align-items: center; gap: 12px; }
-        .factory-footer .footer-logo { width: 40px; height: 40px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; background: linear-gradient(135deg, #10b981, #0f766e); color: white; }
-        .factory-footer .footer-title { font-size: 15px; font-weight: 800; color: var(--text-main); line-height: 1.1; }
-        .factory-footer .footer-subtitle { margin-top: 2px; font-size: 11px; font-weight: 700; color: var(--text-sub); }
-        .factory-footer .footer-status { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; color: #86efac; text-transform: uppercase; }
-        .factory-footer .pulse-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #10b981; animation: pulse 1.8s infinite; }
         /* HEADER */
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px; }
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            padding-bottom: 14px; 
+            margin-bottom: 18px; 
+        }
         .header-title-area { display: flex; align-items: center; gap: 15px; }
-        .menu-toggle-btn { background: none; border: none; color: var(--text-main); font-size: 28px; cursor: pointer; padding: 0; }
+        .menu-toggle-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--panel-border); width: 42px; height: 42px; border-radius: 12px; color: var(--text-main); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+        .menu-toggle-btn:hover { background: rgba(255,255,255,0.1); }
         .header-right { text-align: right; }
-        .time-display { font-size: 30px; font-family: monospace; font-weight: 900; color: #ffffff; line-height: 1; }
-        .date-display { font-size: 13px; color: var(--text-sub); margin-top: 4px; font-weight: 600; }
-        
-        /* SIDEBAR */
-        .sidebar-drawer { position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; background-color: var(--sidebar-bg); border-right: 1px solid rgba(255,255,255,0.1); box-shadow: 25px 0 60px rgba(0,0,0,0.4); z-index: 999; display: flex; flex-direction: column; padding: 35px 25px; box-sizing: border-box; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .time-display { font-size: 28px; font-family: monospace; font-weight: 900; color: #38bdf8; text-shadow: 0 0 20px rgba(56, 189, 248, 0.8); line-height: 1; }
+        .date-display { font-size: 12px; color: var(--text-sub); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* SIDEBAR & OVERLAY */
+        .sidebar-drawer { position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; background-color: #0f172a; border-right: 1px solid rgba(255,255,255,0.1); box-shadow: 25px 0 60px rgba(0,0,0,0.4); z-index: 999; display: flex; flex-direction: column; padding: 35px 25px; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .sidebar-drawer.open { left: 0; }
         .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 998; display: none; }
         .sidebar-overlay.show { display: block; }
         .sidebar-header { font-size: 12px; font-weight: 800; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 30px; }
-        .sidebar-menu-item { background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text-main); padding: 16px; border-radius: 14px; font-weight: 700; font-size: 14px; text-align: left; cursor: pointer; margin-bottom: 15px; display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; }
+        .sidebar-menu-item { background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border); color: var(--text-main); padding: 16px; border-radius: 14px; font-weight: 700; font-size: 14px; text-align: left; cursor: pointer; margin-bottom: 15px; width: 100%; transition: background 0.2s; }
+        .sidebar-menu-item:hover { background: rgba(255,255,255,0.08); }
         .btn-danger-item { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: #ef4444; }
 
-        /* SUMMARY BAR PER FLOOR */
-        .stats-two-rows { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-        .stats-floor-row { display: grid; grid-template-columns: 90px 1fr 1fr 1fr; gap: 10px; align-items: center; background: rgba(15, 23, 42, 0.3); padding: 8px 15px; border-radius: 14px; border: 1px solid var(--border); }
-        .floor-label-tag { font-size: 13px; font-weight: 900; text-transform: uppercase; color: #38bdf8; }
-        .stat-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; display: flex; align-items: center; gap: 10px; }
-        .stat-icon { font-size: 16px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
-        .stat-info p { margin: 0; font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; }
-        .stat-info h3 { margin: 0; font-size: 18px; font-weight: 900; }
-
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        /* WORKSPACE SPLIT */
-        .workspace-split { display: grid; grid-template-columns: minmax(340px, 1.65fr) minmax(320px, 1fr); gap: 20px; align-items: start; }
-        .dashboard-split-left { display: grid; grid-template-columns: repeat(2, minmax(300px, 1fr)); gap: 12px; align-items: stretch; }
-        .column-section { background: rgba(15, 23, 42, 0.15); border: 1px solid var(--border); border-radius: 20px; padding: 10px; min-height: auto; }
-        .column-header { font-size: 14px; font-weight: 900; letter-spacing: 0.5px; padding-bottom: 7px; margin-bottom: 8px; border-bottom: 2px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+        /* COMMAND CENTER STATS ATAS */
+        .stats-two-rows { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        .stats-floor-row { display: grid; grid-template-columns: 140px 1fr 1fr 1fr; gap: 14px; align-items: center; background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.95)); padding: 14px 20px; border-radius: 18px; position: relative; overflow: hidden; }
         
-        .grid-cards { display: grid; grid-template-columns: repeat(2, minmax(210px, 1fr)); gap: 10px; align-content: start; }
-        .vertical-req-card { background: #ffffff; color: #0f172a; border-radius: 20px; padding: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); position: relative; border-top: 6px solid #3b82f6; }
+        .floor-l1-row { border: 2px solid rgba(14, 165, 233, 0.6); box-shadow: 0 0 30px rgba(14, 165, 233, 0.2), inset 0 0 20px rgba(14, 165, 233, 0.08); }
+        .floor-l2-row { border: 2px solid rgba(16, 185, 129, 0.6); box-shadow: 0 0 30px rgba(16, 185, 129, 0.2), inset 0 0 20px rgba(16, 185, 129, 0.08); }
         
-        .floor-tag { position: absolute; top: 0; left: 15px; transform: translateY(-50%); font-size: 9px; font-weight: 900; padding: 4px 10px; border-radius: 5px; color: white; text-transform: uppercase; }
-        .floor-1-bg { background: #3b82f6; }
-        .floor-2-bg { background: #10b981; }
+        .floor-label-tag { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.2px; display: flex; align-items: center; gap: 8px; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        
+        .stat-card { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 14px; padding: 10px 16px; display: flex; align-items: center; gap: 14px; transition: all 0.3s; position: relative; }
+        .stat-card:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.3); transform: translateY(-2px); }
+        
+        .stat-icon { font-size: 16px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+        .icon-troli { background: linear-gradient(135deg, #0284c7, #0369a1); color: #e0f2fe; box-shadow: 0 0 15px rgba(2, 132, 199, 0.5); }
+        .icon-fg { background: linear-gradient(135deg, #d97706, #b45309); color: #fef3c7; box-shadow: 0 0 15px rgba(217, 119, 6, 0.5); }
+        .icon-done { background: linear-gradient(135deg, #059669, #047857); color: #d1fae5; box-shadow: 0 0 15px rgba(5, 150, 105, 0.5); }
 
-        .line-title { font-size: 20px; font-weight: 900; margin: 8px 0 4px 0; color: #0f172a; }
-        .media-visual-box { width: 75px; height: 75px; display: flex; align-items: center; justify-content: center; margin: 6px 0; }
+        .stat-info p { margin: 0; font-size: 9px; font-weight: 800; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-info h3 { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: 0.5px; text-shadow: 0 2px 6px rgba(0,0,0,0.5); }
+
+        /* SLIDER & BOARDS */
+        .slider-container { display: flex; width: 100%; flex-grow: 1; overflow-x: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; align-items: stretch; }
+        .board { flex: 0 0 100%; min-width: 100%; width: 100%; scroll-snap-align: start; box-sizing: border-box; }
+        .board-inner { width: 100%; height: 100%; display: flex; flex-direction: column; box-sizing: border-box; }
+        .board h2 { margin: 0 0 12px 0; font-size: 14px; font-weight: 800; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+
+        /* BOARD 1 LAYOUT */
+        .boards-grid-clean { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex-grow: 1; align-items: start; }
+        .board-column-clean { background: rgba(15, 23, 42, 0.5); border: 1px solid var(--panel-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; backdrop-filter: blur(15px); }
+        .column-header-clean { font-size: 13px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+
+        /* ANIMASI PENDARAN NEON BERGESER (RGB FLOW) DENGAN BACKGROUND PUTIH */
+        @keyframes rgbNeonGlow {
+            0% { 
+                box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 25px rgba(56, 189, 248, 0.9), inset 0 0 20px rgba(56, 189, 248, 0.4); 
+                border-color: #38bdf8; 
+            }
+            33% { 
+                box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(16, 185, 129, 0.9), inset 0 0 25px rgba(16, 185, 129, 0.4); 
+                border-color: #10b981; 
+            }
+            66% { 
+                box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(245, 158, 11, 0.9), inset 0 0 25px rgba(245, 158, 11, 0.4); 
+                border-color: #f59e0b; 
+            }
+            100% { 
+                box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 25px rgba(56, 189, 248, 0.9), inset 0 0 20px rgba(56, 189, 248, 0.4); 
+                border-color: #38bdf8; 
+            }
+        }
+
+        .vertical-hero-card { 
+            background: #ffffff; 
+            color: #0f172a; 
+            border-radius: 24px; 
+            padding: 28px 20px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            text-align: center; 
+            position: relative; 
+            margin-bottom: 12px; 
+            border: 3px solid #38bdf8;
+            animation: rgbNeonGlow 6s infinite ease-in-out;
+            transition: transform 0.3s ease;
+        }
+        .vertical-hero-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .floor-tag-hero { position: absolute; top: 0; left: 24px; transform: translateY(-50%); font-size: 11px; font-weight: 900; padding: 6px 16px; border-radius: 10px; color: white; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        .floor-1-bg { background: #0ea5e9; box-shadow: 0 0 25px rgba(14, 165, 233, 0.9); }
+        .floor-2-bg { background: #10b981; box-shadow: 0 0 25px rgba(16, 185, 129, 0.9); }
+
+        .line-title-hero { font-size: 40px; font-weight: 900; margin: 12px 0 2px 0; color: #0f172a; letter-spacing: 0.5px; }
+        .media-visual-box { width: 76px; height: 76px; display: flex; align-items: center; justify-content: center; margin: 8px 0; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.15)); }
         .media-visual-box svg { width: 100%; height: 100%; }
-        .media-name { font-size: 14px; font-weight: 800; color: #1e293b; text-transform: uppercase; }
-        .timer-text { font-size: 14px; font-weight: 800; color: #d97706; margin: 4px 0; font-family: monospace; }
-        .time-footer { font-size: 11px; color: #64748b; font-weight: 600; }
-        .status-badge-inline { font-size: 9px; font-weight: 800; padding: 3px 6px; border-radius: 4px; color: white; margin-top: 4px; text-transform: uppercase; }
+        .media-name-hero { font-size: 13px; font-weight: 800; color: #334155; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 1px; }
+        .timer-text-hero { font-size: 22px; font-weight: 900; color: #b45309; margin-bottom: 8px; font-family: monospace; background: #fef3c7; padding: 6px 18px; border-radius: 12px; border: 2px solid #fde68a; box-shadow: inset 0 2px 6px rgba(0,0,0,0.06); }
+        .time-footer-hero { font-size: 11px; color: #475569; font-weight: 800; margin-bottom: 10px; }
         
-        .btn-tv-done { width: 100%; background: #10b981; color: white; border: none; font-size: 11px; font-weight: 800; padding: 7px; border-radius: 6px; cursor: pointer; margin-top: 8px; box-shadow: 0 3px 8px rgba(16, 185, 129, 0.2); }
-        .btn-tv-done:hover { background: #059669; }
-        .empty-state { text-align: center; grid-column: 1 / -1; padding: 30px 0; color: #64748b; font-size: 13px; font-weight: 700; border: 2px dashed rgba(255,255,255,0.05); border-radius: 14px; width: 100%; }
+        .status-badge-hero { font-size: 12px; font-weight: 900; padding: 7px 20px; border-radius: 99px; color: white; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 18px rgba(0,0,0,0.25); }
+        .status-wait { background: #f59e0b; color: #ffffff; box-shadow: 0 0 25px rgba(245, 158, 11, 0.8); }
+        .status-ready { background: #10b981; color: #ffffff; box-shadow: 0 0 25px rgba(16, 185, 129, 0.8); }
 
-        /* TABEL OMG DI ATAS - Font dan padding diperbesar */
-        .tabel-omg { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; color: #0f172a; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 14px; }
-        .tabel-omg th { background-color: #1e293b; color: white; padding: 8px; font-size: 14px; }
-        .tabel-omg td { padding: 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700; }
+        /* GRID KARTU MULTI ITEM */
+        .multi-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; width: 100%; }
 
-        /* HISTORY TABLE / TABEL RITASE UTAMA - Font dan tinggi baris diperbesar */
+        .btn-tv-done { width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; font-size: 13px; font-weight: 900; padding: 12px; border-radius: 14px; cursor: pointer; margin-top: 14px; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.5); transition: transform 0.2s, box-shadow 0.2s; }
+        .btn-tv-done:hover { transform: scale(1.02); box-shadow: 0 10px 25px rgba(16, 185, 129, 0.7); }
+        .empty-state { text-align: center; padding: 24px 0; color: var(--text-sub); font-size: 12px; font-weight: 700; background: rgba(255, 255, 255, 0.01); border-radius: 12px; border: 1px dashed rgba(255, 255, 255, 0.06); }
+
+        /* BOARD 2 & 3 STYLING */
+        .tabel-omg { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; color: #0f172a; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 13px; }
+        .tabel-omg th { background-color: #1e293b; color: white; padding: 7px; font-size: 13px; }
+        .tabel-omg td { padding: 7px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700; }
+
         .history-table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; border-radius: 12px; overflow: hidden; font-size: 13px; }
-        .history-table th { background-color: #0f4c5c; color: white; padding: 8px 4px; font-size: 13px; letter-spacing: 0.5px; border: 1px solid #135d70; }
-        
-        .history-table th:nth-child(1) { width: 5%; }  /* RIT */
-        .history-table th:nth-child(2) { width: 14%; } /* JAM */
-        .history-table th:nth-child(3) { width: 11%; } /* J4 In */
-        .history-table th:nth-child(4) { width: 11%; } /* J4 Out */
-        .history-table th:nth-child(5) { width: 11%; } /* J3 In */
-        .history-table th:nth-child(6) { width: 11%; } /* J3 Out */
-        .history-table th:nth-child(7) { width: 11%; } /* J6 In */
-        .history-table th:nth-child(8) { width: 11%; } /* J6 Out */
-        .history-table th:nth-child(9) { width: 9%; }  /* OR */
+        .history-table th { background-color: #0f4c5c; color: white; padding: 8px 6px; font-size: 12px; letter-spacing: 0.5px; border: 1px solid #135d70; }
+        .history-table td { padding: 8px 6px; border: 1px solid #cbd5e1; font-size: 12px; }
 
-        .history-table td { padding: 7px 3px; border: 1px solid #cbd5e1; font-size: 13px; }
-
-        .slider-container { display: flex; width: 100%; flex-grow: 1; overflow-x: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; align-items: flex-start; }
-        .board { flex: 0 0 100%; min-width: 100%; width: 100%; min-height: auto; scroll-snap-align: start; box-sizing: border-box; overflow: visible; align-self: flex-start; }
-        .board-inner { width: 100%; min-height: auto; margin: 0 auto; display: block; box-sizing: border-box; padding: 0 5px; overflow: visible; }
-        .board h2 { margin: 0 0 6px 0; font-size: 18px; line-height: 1.1; }
-        .dots { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 100; }
+        /* DOTS 3 BUAH */
+        .dots { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 100; }
         .dot { width: 10px; height: 10px; background: rgba(148,163,184,0.35); border-radius: 50%; cursor: pointer; transition: background 0.2s ease; }
-        .dot.active { background: #38bdf8; }
+        .dot.active { background: #38bdf8; box-shadow: 0 0 12px rgba(56,189,248,0.8); }
 
         body.board-2-active .stats-two-rows { display: none !important; }
 
+        /* POPUP */
         .overlay-popup { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(25px); z-index: 999; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: 0.3s; }
         .overlay-popup.show { opacity: 1; pointer-events: auto; }
-        .popup-box { position: relative; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid rgba(59, 130, 246, 0.4); border-radius: 36px; padding: 40px; text-align: center; color: white; width: 90%; max-width: 440px; }
+        .popup-box { position: relative; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid rgba(59, 130, 246, 0.4); border-radius: 36px; padding: 40px; text-align: center; color: white; width: 90%; max-width: 440px; box-shadow: 0 25px 50px rgba(0,0,0,0.6); }
         .btn-close-popup { position: absolute; top: 20px; right: 25px; font-size: 36px; color: #64748b; cursor: pointer; background: none; border: none; }
-        .badge-completed { background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; }
+        .badge-completed { background: #10b981; color: white; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; }
+
+        /* FOOTER */
+        .factory-footer { margin-top: auto; border-radius: 14px; border: 1px solid var(--panel-border); background: rgba(30, 41, 59, 0.45); padding: 12px 18px; }
+        .factory-footer .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .factory-footer .footer-brand { display: flex; align-items: center; gap: 12px; }
+        .factory-footer .footer-logo { width: 36px; height: 36px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; background: linear-gradient(135deg, #10b981, #0f766e); color: white; }
+        .factory-footer .footer-title { font-size: 14px; font-weight: 800; color: var(--text-main); line-height: 1.1; }
+        .factory-footer .footer-subtitle { margin-top: 2px; font-size: 10px; font-weight: 700; color: var(--text-sub); }
+        .factory-footer .footer-status { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; color: #86efac; text-transform: uppercase; letter-spacing: 0.5px; }
+        .factory-footer .pulse-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #10b981; animation: pulse 1.8s infinite; }
+        @keyframes pulse { 70% { opacity: 0.4; transform: scale(0.8); } }
     </style>
 </head>
 <body>
@@ -178,7 +210,6 @@
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="tutupSidebar()"></div>
 <div class="sidebar-drawer" id="sidebarDrawer">
     <div class="sidebar-header">⚙️ DHS SYSTEM CONTROL PANEL</div>
-    <button class="sidebar-menu-item" onclick="toggleTheme()">🌓 Switch Light Mode</button>
     <button class="sidebar-menu-item btn-danger-item" onclick="clearDataHantu()">🧹 Clear Data Monitor (Reset)</button>
     <div style="flex-grow:1;"></div>
     <button class="sidebar-menu-item btn-danger-item" style="background:#ef4444; color:white; border:none;" onclick="logoutSistem()">🚪 Log Out Platform</button>
@@ -188,9 +219,9 @@
     <div class="popup-box" id="popupBox">
         <button class="btn-close-popup" onclick="window.tutupPopupManual()">×</button>
         <div style="font-size:45px; margin-bottom:15px;" id="popEmoji">📦</div>
-        <h2 id="popFloorLine" style="font-size: 52px; font-weight: 900; margin: 0;">LINE --</h2>
-        <div id="popFloorText" style="font-size: 16px; font-weight: 700; color: #38bdf8; margin-bottom: 20px;">Lantai --</div>
-        <div id="popMedia" style="font-size: 26px; font-weight: 800; color: #f1f5f9; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 16px;">TROLI BESAR</div>
+        <h2 id="popFloorLine" style="font-size: 48px; font-weight: 900; margin: 0;">LINE --</h2>
+        <div id="popFloorText" style="font-size: 15px; font-weight: 700; color: #38bdf8; margin-bottom: 15px;">Lantai --</div>
+        <div id="popMedia" style="font-size: 22px; font-weight: 800; color: #f1f5f9; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 14px;">Troli Besar</div>
     </div>
 </div>
 
@@ -199,8 +230,8 @@
         <div class="header-title-area">
             <button class="menu-toggle-btn" onclick="bukaSidebar()">☰</button>
             <div>
-                <h1 style="margin:0; font-size:24px; font-weight:900; letter-spacing:-0.5px;">DHS • DASHBOARD KFG SEMISOLID</h1>
-                <p style="margin:3px 0 0 0; font-size:11px; color:var(--text-sub); font-weight:600;">ParagonCorp Production Real-time Control Screen</p>
+                <h1 style="margin:0; font-size:22px; font-weight:900; letter-spacing:-0.5px; background: linear-gradient(45deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">DHS • DASHBOARD KFG SEMISOLID</h1>
+                <p style="margin:2px 0 0 0; font-size:11px; color:var(--text-sub); font-weight:700; text-transform: uppercase; letter-spacing: 0.5px;">ParagonCorp Production Real-time Control Screen</p>
             </div>
         </div>
         <div class="header-right">
@@ -209,45 +240,73 @@
         </div>
     </div>
 
+    <!-- COMMAND CENTER STATS ATAS -->
     <div class="stats-two-rows">
-        <div class="stats-floor-row">
-            <div class="floor-label-tag" style="color:#38bdf8;">Lantai 1</div>
-            <div class="stat-card"><div class="stat-icon" style="color:#3b82f6;">⏳</div><div class="stat-info"><p>Antrean Troli</p><h3 id="statTroliLnt1">0</h3></div></div>
-            <div class="stat-card"><div class="stat-icon" style="color:#f59e0b;">🚨</div><div class="stat-info"><p>Antrean FG</p><h3 id="statFGLnt1">0</h3></div></div>
-            <div class="stat-card"><div class="stat-icon" style="color:#10b981;">✓</div><div class="stat-info"><p>Total Selesai</p><h3 id="statDoneLnt1">0</h3></div></div>
+        <div class="stats-floor-row floor-l1-row">
+            <div class="floor-label-tag" style="color:#38bdf8;">🏢 Lantai 1</div>
+            <div class="stat-card">
+                <div class="stat-icon icon-troli">⏳</div>
+                <div class="stat-info"><p>Antrean Troli</p><h3 id="statTroliLnt1">0</h3></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon icon-fg">🚨</div>
+                <div class="stat-info"><p>Antrean FG</p><h3 id="statFGLnt1">0</h3></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon icon-done">✓</div>
+                <div class="stat-info"><p>Total Selesai</p><h3 id="statDoneLnt1">0</h3></div>
+            </div>
         </div>
-        <div class="stats-floor-row">
-            <div class="floor-label-tag" style="color:#a855f7;">Lantai 2</div>
-            <div class="stat-card"><div class="stat-icon" style="color:#3b82f6;">⏳</div><div class="stat-info"><p>Antrean Troli</p><h3 id="statTroliLnt2">0</h3></div></div>
-            <div class="stat-card"><div class="stat-icon" style="color:#f59e0b;">🚨</div><div class="stat-info"><p>Antrean FG</p><h3 id="statFGLnt2">0</h3></div></div>
-            <div class="stat-card"><div class="stat-icon" style="color:#10b981;">✓</div><div class="stat-info"><p>Total Selesai</p><h3 id="statDoneLnt2">0</h3></div></div>
-        </div>
-    </div>
-
-    <div id="jsErrorBanner" style="display:none; position:fixed;left:12px;right:12px;bottom:80px;background:rgba(220,38,38,0.95);color:white;padding:12px;border-radius:10px;z-index:1200;box-shadow:0 8px 30px rgba(0,0,0,0.5);font-weight:700;">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-            <div id="jsErrorText">JS Error detected</div>
-            <button style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 8px;border-radius:6px;cursor:pointer;" onclick="document.getElementById('jsErrorBanner').style.display='none'">Tutup</button>
+        <div class="stats-floor-row floor-l2-row">
+            <div class="floor-label-tag" style="color:#34d399;">🏢 Lantai 2</div>
+            <div class="stat-card">
+                <div class="stat-icon icon-troli">⏳</div>
+                <div class="stat-info"><p>Antrean Troli</p><h3 id="statTroliLnt2">0</h3></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon icon-fg">🚨</div>
+                <div class="stat-info"><p>Antrean FG</p><h3 id="statFGLnt2">0</h3></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon icon-done">✓</div>
+                <div class="stat-info"><p>Total Selesai</p><h3 id="statDoneLnt2">0</h3></div>
+            </div>
         </div>
     </div>
 
     <div class="slider-container" id="sliderContainer">
+        
+        <!-- BOARD 1: TROLI & FG -->
         <div class="board" id="board1">
             <div class="board-inner">
-                <h2>📦 BOARD 1: TROLI & FG</h2>
-                <div class="dashboard-split-left">
-                    <div class="column-section">
-                        <div class="column-header"><span style="color:#38bdf8;">📦 KEBUTUHAN TROLI</span></div>
-                        <div class="grid-cards" id="containerTroli">...</div>
+                <h2>📦 BOARD 1: TROLI & FG ACTIVE QUEUE</h2>
+                <div class="boards-grid-clean">
+                    
+                    <!-- KEBUTUHAN TROLI -->
+                    <div class="board-column-clean">
+                        <div class="column-header-clean" style="color: #38bdf8;">
+                            <span>📦</span> Kebutuhan Troli (Live Queue)
+                        </div>
+                        <div id="heroTroliContainer" class="multi-cards-grid">
+                            <div class="empty-state" style="grid-column: 1 / -1;">Tidak ada antrean troli aktif.</div>
+                        </div>
                     </div>
-                    <div class="column-section">
-                        <div class="column-header"><span style="color:#f59e0b;">🚨 TARIK FG FULL</span></div>
-                        <div class="grid-cards" id="containerFG">...</div>
+
+                    <!-- TARIK FG FULL -->
+                    <div class="board-column-clean">
+                        <div class="column-header-clean" style="color: #fb923c;">
+                            <span>🚨</span> Tarik FG Full (QC & KFG Release)
+                        </div>
+                        <div id="heroFGContainer" class="multi-cards-grid">
+                            <div class="empty-state" style="grid-column: 1 / -1;">Tidak ada antrean FG Full aktif.</div>
+                        </div>
                     </div>
+
                 </div>
             </div>
         </div>
 
+        <!-- BOARD 2: SHIFT & MONITORING -->
         <div class="board" id="board2">
             <div class="board-inner" style="gap: 10px;">
                 <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 5px;">
@@ -257,21 +316,17 @@
                 </div>
 
                <div id="container-omg-split" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 12px;">
-                   <table id="tabel-omg-kiri" class="tabel-omg">
-                       <thead>
-                           <tr><th>Varian</th><th>OnGoing</th><th>Tujuan</th></tr>
-                       </thead>
-                       <tbody id="body-omg-kiri"></tbody>
-                   </table>
-                   <table id="tabel-omg-kanan" class="tabel-omg">
-                       <thead>
-                           <tr><th>Varian</th><th>OnGoing</th><th>Tujuan</th></tr>
-                       </thead>
-                       <tbody id="body-omg-kanan"></tbody>
-                   </table>
+                    <table id="tabel-omg-kiri" class="tabel-omg">
+                        <thead><tr><th>Varian</th><th>OnGoing</th><th>Tujuan</th></tr></thead>
+                        <tbody id="body-omg-kiri"></tbody>
+                    </table>
+                    <table id="tabel-omg-kanan" class="tabel-omg">
+                        <thead><tr><th>Varian</th><th>OnGoing</th><th>Tujuan</th></tr></thead>
+                        <tbody id="body-omg-kanan"></tbody>
+                    </table>
                </div>
 
-                <h2 id="shiftTitle" style="color:#38bdf8; text-align:center; font-size: 18px; font-weight: 900; letter-spacing: 1px; margin: 0 0 6px 0;">SHIFT 1</h2>
+                <h2 id="shiftTitle" style="color:#38bdf8; text-align:center; font-size: 16px; font-weight: 900; letter-spacing: 1px; margin: 0 0 6px 0;">SHIFT 1</h2>
 
                 <table class="history-table" id="tabelData" style="margin: 0;">
                     <thead>
@@ -284,42 +339,55 @@
                             <th rowspan="2" style="vertical-align: middle;">OR</th>
                         </tr>
                         <tr style="background-color: #0f4c5c; color: white;">
-                            <th>In</th><th>Out</th>
-                            <th>In</th><th>Out</th>
-                            <th>In</th><th>Out</th>
+                            <th>In</th><th>Out</th><th>In</th><th>Out</th><th>In</th><th>Out</th>
                         </tr>
                     </thead>
                     <tbody style="color: white;"></tbody>
                 </table>
-
-                <div style="margin-top: 8px; display: flex; gap: 20px; font-size: 11px; font-weight: 700; color: #94a3b8; justify-content: center;">
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                        <div style="width:10px; height:10px; background:#16a34a; border-radius:2px;"></div> Lebih Cepat
+                
+                <!-- KETERANGAN LEBIH CEPAT & LAMBAT (CENTERED) -->
+                <div style="display: flex; justify-content: center; align-items: center; gap: 25px; margin-top: 6px; font-size: 11px; font-weight: 800;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="width: 12px; height: 12px; background: #16a34a; border-radius: 3px; display: inline-block;"></span>
+                        <span style="color: #cbd5e1;">Lebih Cepat</span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                        <div style="width:10px; height:10px; background:#dc2626; border-radius:2px;"></div> Lebih Lambat
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="width: 12px; height: 12px; background: #dc2626; border-radius: 3px; display: inline-block;"></span>
+                        <span style="color: #cbd5e1;">Lebih Lambat</span>
                     </div>
                 </div>
+
             </div> 
         </div>
 
+        <!-- BOARD 3: LOG HISTORY -->
         <div class="board" id="board3">
             <div class="board-inner">
-                <h2>📜 BOARD 3: LOG HISTORY</h2>
-                <div class="column-section" style="padding:20px;">
-                    <table class="history-table" style="table-layout: auto;">
+                <h2>📜 BOARD 3: LOG HISTORY (END-TO-END)</h2>
+                <div style="background: rgba(15, 23, 42, 0.3); border: 1px solid var(--panel-border); border-radius: 18px; padding: 15px; flex-grow: 1;">
+                    <table class="history-table" style="table-layout: fixed; width: 100%;">
                         <thead>
-                            <tr><th>Waktu</th><th>Line</th><th>Lantai</th><th>Media</th><th>Status</th></tr>
+                            <tr>
+                                <th style="width: 18%;">Waktu Minta</th>
+                                <th style="width: 18%;">Waktu QC</th>
+                                <th style="width: 18%;">Waktu Selesai</th>
+                                <th style="width: 16%;">Line</th>
+                                <th style="width: 10%;">Lantai</th>
+                                <th style="width: 12%;">Media</th>
+                                <th style="width: 8%;">Status</th>
+                            </tr>
                         </thead>
-                        <tbody id="historyTableBody">
-                            <tr><td colspan="5" style="text-align:center; color:var(--text-sub);">Belum ada riwayat aktivitas.</td></tr>
+                        <tbody id="historyTableBody" style="color: #0f172a; background: #ffffff;">
+                            <tr><td colspan="7" style="text-align:center; color:var(--text-sub); padding: 25px;">Belum ada riwayat aktivitas.</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
+
     </div>
 
+    <!-- DOTS 3 BUAH (UNTUK BOARD 1, 2, DAN 3) -->
     <div class="dots" id="sliderDots">
         <div class="dot active" data-index="0"></div>
         <div class="dot" data-index="1"></div>
@@ -348,18 +416,6 @@
     }
     keepScreenAwake();
 
-    window.addEventListener('error', function(e){
-        try {
-            const b = document.getElementById('jsErrorBanner');
-            const t = document.getElementById('jsErrorText');
-            if(b && t){
-                t.innerText = (e && e.message) ? `Error: ${e.message}` : String(e);
-                b.style.display = 'block';
-            }
-        } catch(_){}
-    });
-
-    // Jam Digital Realtime Aman & Konsisten (Format HH:MM:SS)
     setInterval(() => {
         try {
             const now = new Date();
@@ -393,7 +449,6 @@
             }
         }
     }
-
     window.addEventListener('pointerdown', unlockAudio, { once: true });
     window.addEventListener('click', unlockAudio, { once: true });
 
@@ -435,13 +490,10 @@
         
         dataShift[shiftNum].forEach((item, index) => {
             const bgRit = index % 2 === 0 ? "#ffffff" : "#f1f5f9"; 
-            
             const valInJ4 = hitungSelisihMenit(item.targetInJ4, item.realInJ4);
             const valOutJ4 = hitungSelisihMenit(item.targetOutJ4, item.realOutJ4);
-            
             const valInJ3 = hitungSelisihMenit(item.targetInJ3, item.realInJ3);
             const valOutJ3 = hitungSelisihMenit(item.targetOutJ3, item.realOutJ3);
-
             const valInJ6 = hitungSelisihMenit(item.targetInJ6, item.realInJ6);
             const valOutJ6 = hitungSelisihMenit(item.targetOutJ6, item.realOutJ6);
 
@@ -452,16 +504,12 @@
                 <tr style="background-color: ${bgRit}; color: #0f172a; text-align: center;">
                     <td style="border: 1px solid #cbd5e1; font-weight: 900; vertical-align: middle;">${item.rit}</td>
                     <td style="border: 1px solid #cbd5e1; font-weight: 800; vertical-align: middle; font-size: 13px;">${item.jam}</td>
-                    
                     <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 7px 3px;">${getCellHtml(item.targetInJ4, valInJ4, item.realInJ4, item.jam, shiftNum)}</td>
                     <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 7px 3px;">${getCellHtml(item.targetOutJ4, valOutJ4, item.realOutJ4, item.jam, shiftNum)}</td>
-
                     <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 7px 3px;">${getCellHtml(item.targetInJ3, valInJ3, item.realInJ3, item.jam, shiftNum)}</td>
                     <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 7px 3px;">${getCellHtml(item.targetOutJ3, valOutJ3, item.realOutJ3, item.jam, shiftNum)}</td>
-
                     <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 7px 3px;">${getCellHtml(item.targetInJ6, valInJ6, item.realInJ6, item.jam, shiftNum)}</td>
                     <td style="border: 1px solid #cbd5e1; vertical-align: middle; padding: 7px 3px;">${getCellHtml(item.targetOutJ6, valOutJ6, item.realOutJ6, item.jam, shiftNum)}</td>
-
                     <td style="border: 1px solid #cbd5e1; font-weight: 800; vertical-align: middle; font-size: 11px; background: ${index % 2 === 0 ? '#f8fafc' : '#e2e8f0'}; padding: 0;">
                         <div style="padding: 4px 2px; border-bottom: 1px solid #cbd5e1;">${orIn}</div>
                         <div style="padding: 4px 2px;">${orOut}</div>
@@ -477,18 +525,13 @@
     };
 
     const svgAssets = {
-        troli_besar: `<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M3 3h2l.4 2M5.4 5h15.4l-1.5 9H6.1L4.3 4H3"/><circle cx="9" cy="20" r="1" fill="#3b82f6"/><circle cx="18" cy="20" r="1" fill="#3b82f6"/></svg>`,
-        troli_kecil: `<svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="4" y="4" width="16" height="4" rx="1"/><rect x="4" y="10" width="16" height="4" rx="1"/><rect x="4" y="16" width="16" height="4" rx="1"/></svg>`,
-        fg_full: `<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`
+        troli_besar: `<svg viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2.5"><path d="M3 3h2l.4 2M5.4 5h15.4l-1.5 9H6.1L4.3 4H3"/><circle cx="9" cy="20" r="1.2" fill="#0ea5e9"/><circle cx="18" cy="20" r="1.2" fill="#0ea5e9"/></svg>`,
+        troli_kecil: `<svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><rect x="4" y="4" width="16" height="4" rx="1"/><rect x="4" y="10" width="16" height="4" rx="1"/><rect x="4" y="16" width="16" height="4" rx="1"/></svg>`,
+        fg_full: `<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`
     };
     
     function bukaSidebar() { document.getElementById('sidebarDrawer').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('show'); }
     function tutupSidebar() { document.getElementById('sidebarDrawer').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); }
-    function toggleTheme() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        document.documentElement.setAttribute('data-theme', currentTheme === 'dark' ? 'light' : 'dark');
-        tutupSidebar();
-    }
     function logoutSistem() { localStorage.clear(); window.location.href = 'login.html'; }
     function clearDataHantu() {
         tutupSidebar();
@@ -534,20 +577,21 @@
     }
 
     let currentBoard = 0;
-    const totalAutoBoards = 2;
+    const maxAutoBoard = 1; // HANYA BERGESER OTOMATIS ANTARA BOARD 1 (index 0) DAN BOARD 2 (index 1)
     let autoSlideInterval = null;
     let autoSlideRestartTimeout = null;
 
     function autoSlide() {
         if (!slider) return;
-        currentBoard = (currentBoard + 1) % totalAutoBoards;
+        // Hanya berputar otomatis antara index 0 dan 1 (Board 1 & Board 2)
+        currentBoard = (currentBoard >= maxAutoBoard) ? 0 : currentBoard + 1;
         slider.scrollLeft = currentBoard * slider.clientWidth;
         activateDot(currentBoard);
     }
 
     function startAutoSlide() {
         if (autoSlideInterval) clearInterval(autoSlideInterval);
-        autoSlideInterval = setInterval(autoSlide, 15000);
+        autoSlideInterval = setInterval(autoSlide, 10000); // 10 detik sesuai permintaan
     }
 
     function pauseAutoSlide() {
@@ -582,9 +626,9 @@
     function alarmMati() { if(alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; } if (alarmTimeout) { clearTimeout(alarmTimeout); alarmTimeout = null; } }
     
     function getMediaLabel(jenis) {
-        if(jenis === 'TROLI_BESAR') return { text: 'Troli Besar', key: 'troli_besar', emoji: '📦', color: '#3b82f6' };
-        if(jenis === 'TROLI_KECIL') return { text: 'Pallet Kayu', key: 'troli_kecil', emoji: '🛒', color: '#10b981' };
-        return { text: 'Kirim FG Full', key: 'fg_full', emoji: '🚨', color: '#f59e0b' };
+        if(jenis === 'TROLI_BESAR') return { text: 'Troli Besar', key: 'troli_besar', emoji: '📦' };
+        if(jenis === 'TROLI_KECIL') return { text: 'Pallet Kayu', key: 'troli_kecil', emoji: '🛒' };
+        return { text: 'Kirim FG Full', key: 'fg_full', emoji: '🚨' };
     }
 
     function startTimer(id, waktuEpoch) {
@@ -596,16 +640,25 @@
         }, 1000);
     }
 
+    function parseWaktuToEpoch(waktuStr) {
+        if (!waktuStr || waktuStr === '-') return null;
+        try {
+            let str = waktuStr.replace(/WIB/g, '').trim(); 
+            let parts = str.split(' ');
+            if (parts.length < 2) return null;
+            let dateParts = parts[0].split('/'); 
+            let timeParts = parts[1].split(/[.:]/); 
+            let d = new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2] || 0);
+            return d.getTime();
+        } catch(e) { return null; }
+    }
+
     socket.on('ANTREAN_BARU_MASUK', (data) => {
         try {
             const isQcStageFg = data && data.jenisMedia === 'FG_FULL' && (!data.status || ['WAIT_QC', 'WAITING', 'WAIT_KFG'].includes(data.status));
-            if (isQcStageFg) {
-                // operator -> QC: jangan tampilkan popup ke KFG
-                return;
-            }
+            if (isQcStageFg) return;
         } catch(_) {}
 
-        // Only show KFG popup for task that passed QC release, not for operator to QC hand-off
         const info = getMediaLabel(data.jenisMedia);
         document.getElementById('popEmoji').innerText = info.emoji;
         document.getElementById('popFloorLine').innerText = data.line;
@@ -618,83 +671,70 @@
     });
     
     socket.on('DATA_ANTREAN_UPDATE', (data) => {
-        const cTroli = document.getElementById('containerTroli'); const cFG = document.getElementById('containerFG');
-        if (!cTroli || !cFG) return;
-        
-        document.getElementById('statTroliLnt1').innerText = data.troli.filter(item => item.lantai == 1).length;
-        document.getElementById('statTroliLnt2').innerText = data.troli.filter(item => item.lantai == 2).length;
-        // Untuk dashboard KFG, hitung FG yang sudah dilewatkan QC (tidak termasuk WAIT_QC)
-        document.getElementById('statFGLnt1').innerText = data.fg.filter(item => item.lantai == 1 && item.status !== 'WAIT_QC').length;
-        document.getElementById('statFGLnt2').innerText = data.fg.filter(item => item.lantai == 2 && item.status !== 'WAIT_QC').length;
+        const troliItems = data.troli || [];
+        const fgItems = (data.fg || []).filter(item => item.status !== 'WAIT_QC');
 
-        if(data.troli.length === 0) {
-            cTroli.innerHTML = `<div class="empty-state">🟢 JALUR AMAN: Tidak ada antrean pasokan troli.</div>`;
-        } else {
-            cTroli.innerHTML = '';
-            data.troli.forEach(item => {
-                const visual = getMediaLabel(item.jenisMedia);
-                let btnHtml = item.lantai == 1 ? `<button class="btn-tv-done" onclick="window.tvSelesaiInstanLnt1('${item.id}')">✓ Sudah Diterima</button>` : '';
-                let badgeColor = item.status === 'DELIVERED' ? '#10b981' : '#d97706';
-                let waktuBersih = (item.waktu || '').replace('WIB WIB', 'WIB').replace('WIB', '').trim();
-                if (waktuBersih) waktuBersih += ' WIB';
+        document.getElementById('statTroliLnt1').innerText = troliItems.filter(item => item.lantai == 1).length;
+        document.getElementById('statTroliLnt2').innerText = troliItems.filter(item => item.lantai == 2).length;
+        document.getElementById('statFGLnt1').innerText = fgItems.filter(item => item.lantai == 1).length;
+        document.getElementById('statFGLnt2').innerText = fgItems.filter(item => item.lantai == 2).length;
 
-                cTroli.innerHTML += `
-                    <div class="vertical-req-card" style="border-top: 6px solid ${visual.color}">
-                        <div class="floor-tag ${item.lantai==1?'floor-1-bg':'floor-2-bg'}">Lantai ${item.lantai}</div>
-                        <div class="line-title">${item.line}</div>
-                        <div class="media-visual-box">${svgAssets[visual.key]}</div>
-                        <div class="media-name">${visual.text}</div>
-                        <div class="timer-text" id="timer-${item.id}">⏰ 00:00</div>
-                        <div class="time-footer">${waktuBersih}</div>
-                        <span class="status-badge-inline" style="background:${badgeColor}">${item.status}</span>
-                        ${btnHtml}
-                    </div>`;
-                
-                // Paksa epoch menggunakan waktu real saat data diterima/direfresh jika selisihnya terlalu jauh atau tidak valid
-                let epochValid = item.waktuEpoch;
-                const now = Date.now();
-                if (!epochValid || Math.abs(now - epochValid) > 86400000) {
-                    epochValid = now; 
-                }
-                startTimer(item.id, epochValid);
-            });
-        }
-
-        if(data.fg.length === 0) {
-            cFG.innerHTML = `<div class="empty-state">🟢 POKAYOKE: Belum ada palet FG siap tarik.</div>`;
-        } else {
-            cFG.innerHTML = '';
-            // Tampilkan hanya FG yang bukan dalam status WAIT_QC (operator->QC)
-            const fgToShow = data.fg.filter(item => item.status !== 'WAIT_QC');
-            fgToShow.forEach(item => {
-                const visual = getMediaLabel(item.jenisMedia);
-                let btnHtml = item.lantai == 1 ? `<button class="btn-tv-done" onclick="window.tvSelesaiInstanLnt1('${item.id}')">✓ Sudah Diterima</button>` : '';
-                let waktuBersih = (item.waktu || '').replace('WIB WIB', 'WIB').replace('WIB', '').trim();
-                if (waktuBersih) waktuBersih += ' WIB';
-
-                cFG.innerHTML += `
-                    <div class="vertical-req-card" style="border-top: 6px solid ${visual.color}">
-                        <div class="floor-tag ${item.lantai==1?'floor-1-bg':'floor-2-bg'}">Lantai ${item.lantai}</div>
-                        <div class="line-title">${item.line}</div>
-                        <div class="media-visual-box">${svgAssets[visual.key]}</div>
-                        <div class="media-name">${visual.text}</div>
-                        <div class="timer-text" id="timer-${item.id}">⏰ 00:00</div>
-                        <div class="time-footer">${waktuBersih}</div>
-                        <span class="status-badge-inline" style="background:#d97706">${item.status === 'READY_KFG' ? 'READY KFG' : item.status}</span>
-                        ${btnHtml}
-                    </div>`;
-                
-                let epochValid = item.waktuEpoch;
-                const now = Date.now();
-                if (!epochValid || Math.abs(now - epochValid) > 86400000) {
-                    epochValid = now; 
-                }
-                startTimer(item.id, epochValid);
-            });
-        }
+        renderColumnGrid('troli', troliItems);
+        renderColumnGrid('fg', fgItems);
     });
 
+    function renderColumnGrid(type, items) {
+        const isTroli = type === 'troli';
+        const container = document.getElementById(isTroli ? 'heroTroliContainer' : 'heroFGContainer');
+
+        if (items.length === 0) {
+            container.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;">Tidak ada antrean ${type} aktif.</div>`;
+            return;
+        }
+
+        container.innerHTML = '';
+        items.forEach((item) => {
+            const visual = getMediaLabel(item.jenisMedia);
+            const floorBgClass = item.lantai == 1 ? 'floor-1-bg' : 'floor-2-bg';
+            const statusClass = (item.status === 'READY_KFG' || item.status === 'DELIVERED') ? 'status-ready' : 'status-wait';
+            let btnHtml = item.lantai == 1 ? `<button class="btn-tv-done" onclick="window.tvSelesaiInstanLnt1('${item.id}')">✓ Sudah Diterima</button>` : '';
+            
+            let rawWaktu = (item.jenisMedia === 'FG_FULL' && item.waktuRelease && item.waktuRelease !== '-') ? item.waktuRelease : item.waktu;
+            let waktuBersih = (rawWaktu || '').replace('WIB WIB', 'WIB').replace('WIB', '').trim();
+            if (waktuBersih) waktuBersih += ' WIB';
+
+            container.innerHTML += `
+                <div class="vertical-hero-card">
+                    <div class="floor-tag-hero ${floorBgClass}">Lantai ${item.lantai}</div>
+                    <div class="line-title-hero">${item.line}</div>
+                    <div class="media-visual-box">${svgAssets[visual.key]}</div>
+                    <div class="media-name-hero">${visual.text}</div>
+                    <div class="timer-text-hero" id="timer-${item.id}">⏰ 00:00</div>
+                    <div class="time-footer-hero">${waktuBersih}</div>
+                    <span class="status-badge-hero ${statusClass}">${item.status === 'READY_KFG' ? 'READY KFG' : item.status}</span>
+                    ${btnHtml}
+                </div>
+            `;
+
+            let epochValid = item.waktuEpoch; 
+            if (item.jenisMedia === 'FG_FULL') {
+                epochValid = item.waktuReleaseEpoch || parseWaktuToEpoch(item.waktuRelease) || item.waktuEpoch;
+            }
+
+            const now = Date.now();
+            if (!epochValid || Math.abs(now - epochValid) > 86400000) epochValid = now;
+            startTimer(item.id, epochValid);
+        });
+    }
+
     socket.on('UPDATE_RIWAYAT_SELESAI', (logData) => {
+        riwayatDataLokal = logData || [];
+        document.getElementById('statDoneLnt1').innerText = riwayatDataLokal.filter(x => x.lantai == 1).length;
+        document.getElementById('statDoneLnt2').innerText = riwayatDataLokal.filter(x => x.lantai == 2).length;
+        renderTabelHistory();
+    });
+
+    socket.on('HISTORY_UPDATE', (logData) => {
         riwayatDataLokal = logData || [];
         document.getElementById('statDoneLnt1').innerText = riwayatDataLokal.filter(x => x.lantai == 1).length;
         document.getElementById('statDoneLnt2').innerText = riwayatDataLokal.filter(x => x.lantai == 2).length;
@@ -705,16 +745,26 @@
         const tbody = document.getElementById('historyTableBody');
         if (!tbody) return;
         if(riwayatDataLokal.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-sub);">Belum ada riwayat aktivitas.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-sub); padding: 25px;">Belum ada riwayat aktivitas.</td></tr>`;
             return;
         }
         tbody.innerHTML = '';
         riwayatDataLokal.forEach(item => {
             const visual = getMediaLabel(item.jenisMedia);
-            let waktuLogBersih = (item.waktuSelesai || '--:--').replace('WIB WIB', 'WIB').replace('WIB', '').trim();
-            if (waktuLogBersih && waktuLogBersih !== '--:--') waktuLogBersih += ' WIB';
+            let waktuMinta = item.waktu || '-';
+            let waktuRelease = item.waktuRelease && item.waktuRelease !== '-' ? item.waktuRelease : '-';
+            let waktuSelesai = item.waktuSelesai || '--:--';
 
-            tbody.innerHTML += `<tr><td>${waktuLogBersih}</td><td><b>${item.line}</b></td><td>Lantai ${item.lantai}</td><td>${visual.text}</td><td><span class="badge-completed">COMPLETED</span></td></tr>`;
+            tbody.innerHTML += `
+                <tr>
+                    <td style="font-size: 11px; font-weight: 700;">${waktuMinta}</td>
+                    <td style="font-size: 11px; font-weight: 700; color: #0284c7;">${waktuRelease}</td>
+                    <td style="font-size: 11px; font-weight: 700; color: #16a34a;">${waktuSelesai}</td>
+                    <td><b>${item.line}</b></td>
+                    <td>Lantai ${item.lantai}</td>
+                    <td>${visual.text}</td>
+                    <td><span class="badge-completed">COMPLETED</span></td>
+                </tr>`;
         });
     }
 
@@ -732,29 +782,26 @@
 
                 bodyKiri.innerHTML = dataKiri.map(item => `
                     <tr style="background-color: white; color: black; text-align: center;">
-                        <td style="border: 1px solid #cbd5e1; padding: 8px;">${item.varian || '-'}</td>
-                        <td style="border: 1px solid #cbd5e1; padding: 8px;">${item.onGoing ? parseFloat(item.onGoing).toFixed(1) : '-'}</td>
-                        <td style="border: 1px solid #cbd5e1; padding: 8px;">${item.kesimpulan || '-'}</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 7px;">${item.varian || '-'}</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 7px;">${item.onGoing ? parseFloat(item.onGoing).toFixed(1) : '-'}</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 7px;">${item.kesimpulan || '-'}</td>
                     </tr>
                 `).join('');
 
                 bodyKanan.innerHTML = dataKanan.map(item => `
                     <tr style="background-color: white; color: black; text-align: center;">
-                        <td style="border: 1px solid #cbd5e1; padding: 8px;">${item.varian || '-'}</td>
-                        <td style="border: 1px solid #cbd5e1; padding: 8px;">${item.onGoing ? parseFloat(item.onGoing).toFixed(1) : '-'}</td>
-                        <td style="border: 1px solid #cbd5e1; padding: 8px;">${item.kesimpulan || '-'}</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 7px;">${item.varian || '-'}</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 7px;">${item.onGoing ? parseFloat(item.onGoing).toFixed(1) : '-'}</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 7px;">${item.kesimpulan || '-'}</td>
                     </tr>
                 `).join('');
             }
 
             Object.values(dataShift).forEach(shiftArray => {
                 shiftArray.forEach(row => {
-                    row.realInJ4 = '-';
-                    row.realOutJ4 = '-';
-                    row.realInJ3 = '-';
-                    row.realOutJ3 = '-';
-                    row.realInJ6 = '-';
-                    row.realOutJ6 = '-';
+                    row.realInJ4 = '-'; row.realOutJ4 = '-';
+                    row.realInJ3 = '-'; row.realOutJ3 = '-';
+                    row.realInJ6 = '-'; row.realOutJ6 = '-';
                 });
             });
 
@@ -786,93 +833,61 @@
 
     function hitungSelisihMenit(target, real) {
         if (!real || real === "-" || real === "00:00") return 0;
-
         const tP = target.split(':');
         const rP = real.split(':');
-
-        // Ubah target dan realisasi ke total menit secara utuh (Jam * 60 + Menit)
         const tTotalMenit = (parseInt(tP[0], 10) * 60) + parseInt(tP[1], 10);
         const rTotalMenit = (parseInt(rP[0], 10) * 60) + parseInt(rP[1], 10);
-
-        // Selisih murni: Target dikurangi Realisasi
-        let selisih = tTotalMenit - rTotalMenit;
-
-        return selisih;
+        return tTotalMenit - rTotalMenit;
     }
+
     function getCellHtml(targetTime, val, realTime, itemJam, shiftNum) {
         const isValidTime = isTimePassedOrToday(itemJam, shiftNum);
-
         if (!isValidTime || !realTime || realTime === "-" || realTime === "" || realTime === "00:00") {
-            return `
-                <div style="font-weight: bold; font-size: 13px;">${targetTime}</div>
-                <div style="color: #94a3b8; font-size: 13px;">-</div>
-            `;
+            return `<div style="font-weight: bold; font-size: 12px;">${targetTime}</div><div style="color: #94a3b8; font-size: 12px;">-</div>`;
         }
         
-        let displayVal = val;
-        let bg = "#334155"; // Abu-abu gelap untuk tepat waktu (0)
-
-        if (val > 0) {
-            bg = "#16a34a"; // Hijau (Lebih cepat)
-        } else if (val < 0) {
-            bg = "#dc2626"; // Merah (Lebih lambat)
-        }
+        let bg = "#334155";
+        if (val > 0) bg = "#16a34a"; 
+        else if (val < 0) bg = "#dc2626"; 
 
         return `
-            <div style="font-weight: bold; font-size: 13px; margin-bottom: 2px;">${targetTime}</div>
-            <div style="background-color: ${bg}; color: white; padding: 2px 6px; border-radius: 4px; font-weight: 900; display: inline-block; font-size: 13px;">
-                ${displayVal}
+            <div style="font-weight: bold; font-size: 12px; margin-bottom: 2px;">${targetTime}</div>
+            <div style="background-color: ${bg}; color: white; padding: 2px 6px; border-radius: 4px; font-weight: 900; display: inline-block; font-size: 12px;">
+                ${val}
             </div>
         `;
     }
+
     setInterval(updateTabelDariSpreadsheet, 60000);
     updateTabelDariSpreadsheet();
 
     function cekPerluReset(waktu) {
         if (!waktu || waktu === "-") return true;
-        
         const parts = waktu.split(' ');
         if (parts.length < 2) return true;
-        
         const tglParts = parts[0].split('/'); 
         const jamParts = parts[1].split(':'); 
-        
         const dataDate = new Date(tglParts[2], tglParts[1] - 1, tglParts[0], jamParts[0], jamParts[1], jamParts[2] || 0);
         const sekarang = new Date();
-
-        // Geser -6 jam 55 menit (reset operasional baru pukul 06:55 pagi)
         const offsetReset = (6 * 60 + 55) * 60 * 1000;
         const operasionalData = new Date(dataDate.getTime() - offsetReset);
         const operasionalSekarang = new Date(sekarang.getTime() - offsetReset);
 
-        if (operasionalData.toDateString() !== operasionalSekarang.toDateString()) {
-            return true; 
-        }
-
+        if (operasionalData.toDateString() !== operasionalSekarang.toDateString()) return true; 
         const selisihMs = sekarang.getTime() - dataDate.getTime();
-        if (selisihMs > 86400000 || selisihMs < -300000) {
-            return true; 
-        }
-        
+        if (selisihMs > 86400000 || selisihMs < -300000) return true; 
         return false;
     }
 
     function isTimePassedOrToday(itemJam, shiftNum) {
         const now = new Date(); 
-        
         const offsetReset = (6 * 60 + 55) * 60 * 1000;
         let operationalNow = new Date(now.getTime() - offsetReset);
-        
         const startTimeStr = itemJam.split('-')[0].trim();
         const [targetHour, targetMinute] = startTimeStr.split(':').map(Number);
-        
         let targetDateTime = new Date(operationalNow);
         targetDateTime.setHours(targetHour, targetMinute, 0, 0);
-        
-        if (now < targetDateTime) {
-            return false; 
-        }
-        
+        if (now < targetDateTime) return false; 
         return true; 
     }
 
@@ -880,9 +895,8 @@
         const jam = new Date().getHours();
         const menit = new Date().getMinutes();
         const totalMenit = (jam * 60) + menit;
-
-        if (totalMenit >= 415 && totalMenit < 895) return 'SHIFT 1'; // 06:55 - 14:55
-        if (totalMenit >= 895 && totalMenit < 1375) return 'SHIFT 2'; // 14:55 - 22:55
+        if (totalMenit >= 415 && totalMenit < 895) return 'SHIFT 1'; 
+        if (totalMenit >= 895 && totalMenit < 1375) return 'SHIFT 2'; 
         return 'SHIFT 3';
     }
 
@@ -908,11 +922,10 @@
     setInterval(() => {
         const shiftSekarang = getShiftOtomatis().split(' ')[1];
         const shiftDiLayar = localStorage.getItem('shiftAktif');
-        if (shiftSekarang !== shiftDiLayar) {
-            renderDashboardByShift(shiftSekarang, false);
-        }
+        if (shiftSekarang !== shiftDiLayar) renderDashboardByShift(shiftSekarang, false);
     }, 30000);
 </script>
+
 <footer class="factory-footer">
     <div class="footer-inner">
         <div class="footer-brand">
@@ -922,7 +935,7 @@
                 <div class="footer-subtitle">@Part of ParagonCorp</div>
             </div>
         </div>
-        <div class="footer-status"><span class="pulse-dot"></span><span>Digital Handling System</span></div>
+        <div class="footer-status"><span class="pulse-dot"></span><span>Digital Handling System Active</span></div>
     </div>
 </footer>
 </body>
