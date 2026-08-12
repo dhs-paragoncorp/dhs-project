@@ -14,7 +14,14 @@ expressApp.use(cors());
 expressApp.use(express.json());
 
 const server = http.createServer(expressApp);
-const io = new Server(server, { cors: { origin: "*" } });
+
+// 🛠️ FIX SOCKET DISCONNECT: Tambahkan konfigurasi pingInterval & pingTimeout yang lebih longgar
+// agar browser tidak cepat memutuskan koneksi saat tab ditinggal di background.
+const io = new Server(server, { 
+    cors: { origin: "*" },
+    pingInterval: 25000, // Kirim heartbeat tiap 25 detik
+    pingTimeout: 60000   // Tunggu sampai 60 detik sebelum anggap disconnect
+});
 
 // ==================== [DATABASE MASTER USER PABRIKAN] ====================
 const MASTER_USER_DB = {
@@ -64,7 +71,7 @@ let currentShift = 'SHIFT 1';
 const lineLnt1 = ['STP 01','LIP 16','BTP 03','LIP 09','VSN 05','VMN 06','BRP 04','VMN 05','VSN 03','BRP 02','VAM 03','BRP 01'];
 const lineLnt2 = ['EMP 16','LIP 11','BTP 04','LIP 10','JRP 02','FOP 03','BTP 01','BTP 02','LIP 18','VAM 02','SBP 01','VMN 04','LIP 09','LIP 06','LIP 08','ALP 03','LIP 12'];
 
-// Helper untuk format Tanggal dan Jam Lengkap
+// Helper untuk format Tanggal dan Jam Lengkap (WIB Lokal)
 function getFormattedTimestamp() {
     const now = new Date();
     const tanggal = now.toLocaleDateString('id-ID'); // Format: DD/MM/YYYY
@@ -91,7 +98,7 @@ function completeRequestById(id) {
     if (!dataSelesai) return null;
 
     dataSelesai.status = 'COMPLETED';
-    dataSelesai.waktuSelesai = getFormattedTimestamp(); // Catat tanggal & jam selesai lengkap
+    dataSelesai.waktuSelesai = getFormattedTimestamp(); 
     historyLog.push(dataSelesai);
     
     io.emit('ANTREAN_SELESAI_SYNC', id);
@@ -135,7 +142,9 @@ expressApp.post('/api/request/baru', (req, res) => {
     const normalizedLine = String(line || '').trim().toUpperCase();
     const normalizedMedia = jenisMedia || 'TROLI_KECIL';
     
-    const waktuMintaStr = getFormattedTimestamp(); // Tanggal & Jam Minta lengkap
+    const waktuMintaStr = getFormattedTimestamp(); 
+    
+    // 🛠️ FIX JAM CARD: Gunakan Date.now() real-time server agar hitungan timer di frontend akurat
     const epochSekarang = Date.now();
 
     const dataBaru = {
@@ -143,10 +152,10 @@ expressApp.post('/api/request/baru', (req, res) => {
         line: normalizedLine,
         lantai: typeof lantai === 'number' ? lantai : resolveLineLantai(line),
         jenisMedia: normalizedMedia,
-        waktu: waktuMintaStr,          // Waktu Operator Minta (Tanggal + Jam)
-        waktuEpoch: epochSekarang,     // Anti selisih timer
-        waktuRelease: '-',             // Diisi saat QC Release
-        waktuSelesai: '-',             // Diisi saat Selesai KFG
+        waktu: waktuMintaStr,        
+        waktuEpoch: epochSekarang,    // Kunci utama agar timer card berjalan pas dari 00:00
+        waktuRelease: '-',            
+        waktuSelesai: '-',            
         status: status || (normalizedMedia === 'FG_FULL' ? 'WAIT_QC' : 'WAIT_KFG')
     };
     
@@ -182,7 +191,7 @@ expressApp.post('/api/request/kirim-troli', (req, res) => {
     return res.status(404).json({ success: false });
 });
 
-// API QC Release (Pencatatan waktuRelease dengan Tanggal & Jam)
+// API QC Release
 expressApp.post('/api/request/qc-release', (req, res) => {
     const { id } = req.body || {};
     if (!id) return res.status(400).json({ success: false, message: 'Missing id' });
@@ -191,7 +200,9 @@ expressApp.post('/api/request/qc-release', (req, res) => {
     if (idx === -1) return res.status(404).json({ success: false, message: 'Task not found' });
 
     antreanFG[idx].status = 'READY_KFG';
-    antreanFG[idx].waktuRelease = getFormattedTimestamp(); // Catat Tanggal & Jam Release QC
+    antreanFG[idx].waktuRelease = getFormattedTimestamp(); 
+    // Perbarui juga waktuReleaseEpoch agar timer FG Full berjalan tepat setelah dirilis QC
+    antreanFG[idx].waktuReleaseEpoch = Date.now(); 
 
     io.emit('ANTREAN_BARU_MASUK', antreanFG[idx]);
     broadcastDataAwal();
@@ -199,7 +210,7 @@ expressApp.post('/api/request/qc-release', (req, res) => {
     return res.json({ success: true, data: antreanFG[idx] });
 });
 
-// API Selesai Eksekusi (KFG / Lantai 1)
+// API Selesai Eksekusi
 expressApp.post('/api/request/selesai', (req, res) => {
     const { id } = req.body;
     const completed = completeRequestById(id);
