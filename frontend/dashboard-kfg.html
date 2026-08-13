@@ -361,30 +361,44 @@
         </div>
 
         <!-- BOARD 3: LOG HISTORY -->
+        <!-- BOARD 3: LOG HISTORY -->
         <div class="board" id="board3">
             <div class="board-inner">
                 <h2>📜 BOARD 3: LOG HISTORY (END-TO-END)</h2>
-                <div style="background: rgba(15, 23, 42, 0.3); border: 1px solid var(--panel-border); border-radius: 18px; padding: 15px; flex-grow: 1;">
-                    <table class="history-table" style="table-layout: fixed; width: 100%;">
-                        <thead>
-                            <tr>
-                                <th style="width: 18%;">Waktu Minta</th>
-                                <th style="width: 18%;">Waktu QC</th>
-                                <th style="width: 18%;">Waktu Selesai</th>
-                                <th style="width: 16%;">Line</th>
-                                <th style="width: 10%;">Lantai</th>
-                                <th style="width: 12%;">Media</th>
-                                <th style="width: 8%;">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyTableBody" style="color: #0f172a; background: #ffffff;">
-                            <tr><td colspan="7" style="text-align:center; color:var(--text-sub); padding: 25px;">Belum ada riwayat aktivitas.</td></tr>
-                        </tbody>
-                    </table>
+                <div style="background: rgba(15, 23, 42, 0.3); border: 1px solid var(--panel-border); border-radius: 18px; padding: 15px; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between;">
+                    
+                    <div style="overflow-x: auto; flex-grow: 1;">
+                        <table class="history-table" style="table-layout: fixed; width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 18%;">Waktu Minta</th>
+                                    <th style="width: 18%;">Waktu QC</th>
+                                    <th style="width: 18%;">Waktu Selesai</th>
+                                    <th style="width: 16%;">Line</th>
+                                    <th style="width: 10%;">Lantai</th>
+                                    <th style="width: 12%;">Media</th>
+                                    <th style="width: 8%;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody" style="color: #0f172a; background: #ffffff;">
+                                <tr><td colspan="7" style="text-align:center; color:var(--text-sub); padding: 25px;">Belum ada riwayat aktivitas.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- NAVIGASI PAGINATION (PER 20 BARIS) -->
+                    <div id="historyPagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <div id="paginationInfo" style="font-size: 11px; font-weight: 700; color: var(--text-sub);">Menampilkan 0 - 0 dari 0 data</div>
+                        <div style="display: flex; gap: 6px;">
+                            <button id="btnPrevPage" onclick="gantiHalamanHistory(-1)" style="background: #1e293b; color: #38bdf8; border: 1px solid #3b82f6; padding: 5px 12px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer;">← Sebelumnya</button>
+                            <span id="pageIndicator" style="display: flex; align-items: center; font-size: 11px; font-weight: 800; color: white; padding: 0 8px;">Hal 1 / 1</span>
+                            <button id="btnNextPage" onclick="gantiHalamanHistory(1)" style="background: #1e293b; color: #38bdf8; border: 1px solid #3b82f6; padding: 5px 12px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer;">Selanjutnya →</button>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
-
     </div>
 
     <!-- DOTS 3 BUAH (UNTUK BOARD 1, 2, DAN 3) -->
@@ -697,9 +711,10 @@
             const visual = getMediaLabel(item.jenisMedia);
             const floorBgClass = item.lantai == 1 ? 'floor-1-bg' : 'floor-2-bg';
             const statusClass = (item.status === 'READY_KFG' || item.status === 'DELIVERED') ? 'status-ready' : 'status-wait';
-            let btnHtml = item.lantai == 1 ? `<button class="btn-tv-done" onclick="window.tvSelesaiInstanLnt1('${item.id}')">✓ Sudah Diterima</button>` : '';
             
-            // Format ulang waktu berdasarkan epoch agar akurat sesuai jam lokal perangkat
+            // Tombol Sudah Diterima untuk Lantai 1 dihapus sesuai permintaan
+            let btnHtml = ''; 
+            
             let epochValid = item.waktuEpoch; 
             if (item.jenisMedia === 'FG_FULL') {
                 epochValid = item.waktuReleaseEpoch || parseWaktuToEpoch(item.waktuRelease) || item.waktuEpoch;
@@ -708,7 +723,6 @@
             const now = Date.now();
             if (!epochValid || Math.abs(now - epochValid) > 86400000) epochValid = now;
 
-            // Buat string jam lokal yang bersih dari epoch
             const dateObj = new Date(epochValid);
             const tanggalStr = dateObj.toLocaleDateString('id-ID');
             const jamStr = dateObj.toLocaleTimeString('id-ID');
@@ -745,15 +759,52 @@
         renderTabelHistory();
     });
 
+    let currentPageHistory = 1;
+    const rowsPerPageHistory = 20;
+
+    function gantiHalamanHistory(direction) {
+        const totalRows = riwayatDataLokal.length;
+        const totalPages = Math.ceil(totalRows / rowsPerPageHistory) || 1;
+        
+        currentPageHistory += direction;
+        if (currentPageHistory < 1) currentPageHistory = 1;
+        if (currentPageHistory > totalPages) currentPageHistory = totalPages;
+        
+        renderTabelHistory();
+    }
+
     function renderTabelHistory() {
         const tbody = document.getElementById('historyTableBody');
+        const infoEl = document.getElementById('paginationInfo');
+        const indicatorEl = document.getElementById('pageIndicator');
+        const btnPrev = document.getElementById('btnPrevPage');
+        const btnNext = document.getElementById('btnNextPage');
+
         if (!tbody) return;
-        if(riwayatDataLokal.length === 0) {
+
+        if (riwayatDataLokal.length === 0) {
             tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-sub); padding: 25px;">Belum ada riwayat aktivitas.</td></tr>`;
+            if (infoEl) infoEl.innerText = "Menampilkan 0 - 0 dari 0 data";
+            if (indicatorEl) indicatorEl.innerText = "Hal 1 / 1";
+            if (btnPrev) btnPrev.disabled = true;
+            if (btnNext) btnNext.disabled = true;
             return;
         }
+
+        // BALIK URUTAN: Data terbaru otomatis ada di paling atas (.slice().reverse())
+        const reversedData = riwayatDataLokal.slice().reverse();
+
+        const totalRows = reversedData.length;
+        const totalPages = Math.ceil(totalRows / rowsPerPageHistory);
+        
+        if (currentPageHistory > totalPages) currentPageHistory = totalPages;
+
+        const startIndex = (currentPageHistory - 1) * rowsPerPageHistory;
+        const endIndex = Math.min(startIndex + rowsPerPageHistory, totalRows);
+        const paginatedData = reversedData.slice(startIndex, endIndex);
+
         tbody.innerHTML = '';
-        riwayatDataLokal.forEach(item => {
+        paginatedData.forEach(item => {
             const visual = getMediaLabel(item.jenisMedia);
             let waktuMinta = item.waktu || '-';
             let waktuRelease = item.waktuRelease && item.waktuRelease !== '-' ? item.waktuRelease : '-';
@@ -770,6 +821,18 @@
                     <td><span class="badge-completed">COMPLETED</span></td>
                 </tr>`;
         });
+
+        // Update Info Pagination & Status Tombol
+        if (infoEl) infoEl.innerText = `Menampilkan ${startIndex + 1} - ${endIndex} dari ${totalRows} data`;
+        if (indicatorEl) indicatorEl.innerText = `Hal ${currentPageHistory} / ${totalPages}`;
+        if (btnPrev) {
+            btnPrev.disabled = currentPageHistory === 1;
+            btnPrev.style.opacity = btnPrev.disabled ? "0.4" : "1";
+        }
+        if (btnNext) {
+            btnNext.disabled = currentPageHistory >= totalPages;
+            btnNext.style.opacity = btnNext.disabled ? "0.4" : "1";
+        }
     }
 
     async function updateTabelDariSpreadsheet() {
