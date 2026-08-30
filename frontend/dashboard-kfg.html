@@ -468,6 +468,10 @@
 
     socket.on('GANTI_SHIFT', (data) => { renderDashboardByShift(data.shift, true); });
 
+    socket.on('FORCE_RESET_SCREEN', () => {
+            // Berikan sedikit jeda atau langsung reload halaman agar browser memperbarui script terbaru
+            window.location.reload();
+        });
     const dataShift = {
         1: [
             {rit: 1, jam: "07:00 - 08:05", targetInJ4: "07:00", targetOutJ4: "07:15", realInJ4: "-", realOutJ4: "-", targetInJ3: "07:20", targetOutJ3: "07:35", realInJ3: "-", realOutJ3: "-", targetInJ6: "07:40", targetOutJ6: "08:05", realInJ6: "-", realOutJ6: "-", or: "In J4"},

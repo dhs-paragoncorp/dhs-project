@@ -3,11 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DHS v1.0 • ParagonCorp Gerbang Login Utama</title>
+    <title>DHS v2.6 • ParagonCorp Login </title>
     <style>
         body {
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-            background: radial-gradient(circle at top left, #0f172a, #020617);
+            background-color: #030712;
+            /* Kombinasi siluet pabrik di bawah, grid industrial, dan glow animasi */
+            background-image: 
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320' preserveAspectRatio='none'%3E%3Cpath fill='%231e293b' fill-opacity='0.25' d='M0,192L48,181.3C96,171,192,150,288,160C384,171,480,213,576,213.3C672,213,768,171,864,149.3C960,128,1056,128,1152,144C1248,160,1344,192,1392,208L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E"),
+                radial-gradient(circle at 20% 25%, rgba(59, 130, 246, 0.18) 0%, transparent 45%),
+                radial-gradient(circle at 80% 75%, rgba(16, 185, 129, 0.12) 0%, transparent 45%),
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 220px, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+            background-repeat: no-repeat, no-repeat, no-repeat, repeat, repeat;
+            background-position: bottom center, 0 0, 0 0, 0 0, 0 0;
+            animation: bgGlowPulse 8s ease-in-out infinite alternate;
             color: #ffffff;
             margin: 0;
             padding: 0;
@@ -16,36 +27,32 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            overflow: hidden;
         }
 
-        .factory-footer {
-            margin-top: 24px;
-            border-radius: 14px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.04);
-            padding: 12px 18px;
-            width: min(92vw, 680px);
-            box-sizing: border-box;
+        /* Animasi pernapasan cahaya background */
+        @keyframes bgGlowPulse {
+            0% {
+                filter: brightness(1);
+            }
+            100% {
+                filter: brightness(1.15);
+            }
         }
-        .factory-footer .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-        .factory-footer .footer-brand { display: flex; align-items: center; gap: 12px; }
-        .factory-footer .footer-logo { width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; background: linear-gradient(135deg, #10b981, #0f766e); color: white; border: 1px solid rgba(255,255,255,0.2); }
-        .factory-footer .footer-title { font-size: 15px; font-weight: 900; color: #e2e8f0; }
-        .factory-footer .footer-subtitle { margin-top: 2px; font-size: 10px; font-weight: 700; color: #94a3b8; }
-        .factory-footer .footer-status { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; color: #86efac; text-transform: uppercase; }
-        .factory-footer .pulse-dot { width: 8px; height: 8px; border-radius: 999px; background: #10b981; display: inline-block; animation: pulse 1.8s infinite; }
 
         .login-card {
             width: 100%;
             max-width: 400px;
-            background: rgba(30, 41, 59, 0.4);
+            background: rgba(15, 23, 42, 0.75);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             padding: 40px 30px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
             text-align: center;
+            box-sizing: border-box;
+            z-index: 10;
         }
 
         .logo-area h2 {
@@ -60,7 +67,7 @@
 
         .logo-area p {
             margin: 5px 0 30px 0;
-            font-size: 12px;
+            font-size: 11px;
             color: #64748b;
             font-weight: 700;
             text-transform: uppercase;
@@ -74,7 +81,7 @@
 
         .form-group label {
             display: block;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
             color: #94a3b8;
             margin-bottom: 8px;
@@ -82,13 +89,19 @@
             letter-spacing: 0.5px;
         }
 
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
         .form-group input {
             width: 100%;
             box-sizing: border-box;
-            background: #0f172a;
-            border: 1px solid #334155;
+            background: #020617;
+            border: 1px solid #1e293b;
             border-radius: 12px;
-            padding: 14px;
+            padding: 14px 16px;
             color: #ffffff;
             font-size: 14px;
             font-weight: 600;
@@ -98,7 +111,54 @@
         .form-group input:focus {
             outline: none;
             border-color: #3b82f6;
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.25);
+        }
+
+        /* Tombol Toggle Password (Mata) */
+        .toggle-password {
+            position: absolute;
+            right: 14px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #64748b;
+            font-size: 16px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .toggle-password:hover {
+            color: #cbd5e1;
+        }
+
+        /* Opsi Remember Me */
+        .remember-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 24px;
+            font-weight: 600;
+        }
+
+        .remember-row label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            text-transform: none;
+            margin: 0;
+        }
+
+        .remember-row input[type="checkbox"] {
+            accent-color: #3b82f6;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
         }
 
         .btn-login {
@@ -111,13 +171,17 @@
             font-weight: 800;
             border-radius: 12px;
             cursor: pointer;
-            margin-top: 10px;
             box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
             transition: all 0.2s;
         }
 
+        .btn-login:hover {
+            opacity: 0.95;
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
         .btn-login:active {
-            transform: scale(0.97);
+            transform: scale(0.98);
         }
 
         .error-msg {
@@ -125,7 +189,20 @@
             font-size: 12px;
             font-weight: 700;
             margin-top: 15px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 10px;
+            border-radius: 8px;
             display: none;
+        }
+
+        .factory-badge {
+            margin-top: 24px;
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            z-index: 10;
         }
     </style>
 </head>
@@ -139,33 +216,78 @@
 
     <div class="form-group">
         <label for="username">ID Akun (Line / Jabatan)</label>
-        <input type="text" id="username" placeholder="Contoh: lip18, kfg_gudang, atau kfg_tv" autocomplete="off">
+        <div class="input-wrapper">
+            <input type="text" id="username" placeholder="Contoh: lip18, kfg_gudang" autocomplete="off">
+        </div>
     </div>
 
     <div class="form-group">
         <label for="password">Kata Sandi</label>
-        <input type="password" id="password" placeholder="Masukkan password...">
+        <div class="input-wrapper">
+            <input type="password" id="password" placeholder="Masukkan password...">
+            <button type="button" class="toggle-password" onclick="togglePassVisibility()" id="eyeBtn" title="Tampilkan/Sembunyikan Sandi">
+                👁️
+            </button>
+        </div>
     </div>
 
-    <div id="errorBox" class="error-msg">Username atau Password salah!</div>
+    <div class="remember-row">
+        <label>
+            <input type="checkbox" id="rememberMe"> Ingat ID Akun Saya
+        </label>
+    </div>
+
+    <div id="errorBox" class="error-msg"></div>
 
     <button class="btn-login" onclick="prosesLogin()">MASUK KE SISTEM</button>
 </div>
 
+<div class="factory-badge">FACTORY QUALITY SEMISOLID • SECURE ACCESS</div>
+
 <script>
-    // Bersihkan sesi lama secara total begitu mendarat di gerbang login
-    localStorage.clear();
     sessionStorage.clear();
+
+    // Auto-fill jika fitur Remember Me sebelumnya diaktifkan
+    window.addEventListener('DOMContentLoaded', () => {
+        const rememberedUser = localStorage.getItem('dhs_remembered_user');
+        if (rememberedUser) {
+            document.getElementById('username').value = rememberedUser;
+            document.getElementById('rememberMe').checked = true;
+        }
+    });
+
+    // Fungsi Lihat / Sembunyikan Password
+    function togglePassVisibility() {
+        const passInput = document.getElementById('password');
+        const eyeBtn = document.getElementById('eyeBtn');
+        if (passInput.type === 'password') {
+            passInput.type = 'text';
+            eyeBtn.innerText = '🙈';
+        } else {
+            passInput.type = 'password';
+            eyeBtn.innerText = '👁️';
+        }
+    }
 
     function prosesLogin() {
         const userVal = document.getElementById('username').value.trim();
         const passVal = document.getElementById('password').value;
+        const rememberChecked = document.getElementById('rememberMe').checked;
         const errorBox = document.getElementById('errorBox');
+
+        errorBox.style.display = "none";
 
         if (!userVal || !passVal) {
             errorBox.innerText = "Semua kolom wajib diisi!";
             errorBox.style.display = "block";
             return;
+        }
+
+        // Simpan atau hapus ID akun berdasarkan Remember Me
+        if (rememberChecked) {
+            localStorage.setItem('dhs_remembered_user', userVal);
+        } else {
+            localStorage.removeItem('dhs_remembered_user');
         }
 
         fetch('https://dhs-project.onrender.com/api/auth/login', {
@@ -181,10 +303,8 @@
         })
         .then(resData => {
             if (resData.success) {
-                // Kunci identitas ke memori lokal browser
                 localStorage.setItem('dhs_user', JSON.stringify(resData.data));
                 
-                // Distribusi alur halaman berdasarkan role
                 const role = resData.data.role;
                 if (role === 'OPERATOR') {
                     window.location.href = 'operator.html';
@@ -206,6 +326,7 @@
         });
     }
 
+    // Shortcut tombol Enter pada keyboard
     document.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             prosesLogin();

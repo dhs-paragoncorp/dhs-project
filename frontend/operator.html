@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DHS v1.0 • Operator Packaging Line</title>
+    <title>DHS v2.6 • Operator Packaging Line</title>
     <style>
         :root {
             --bg-body: #f4f6f9; --bg-card: #ffffff; --border: #cbd5e1;
@@ -99,7 +99,6 @@
         .btn-confirm-terima:hover { background: #059669; }
         .btn-confirm-terima svg { width: 12px; height: 12px; fill: white; }
 
-        /* Tombol Instan khusus Lantai 1 */
         .btn-instan-lnt1 { 
             background: #64748b; 
             color: white; 
@@ -162,7 +161,6 @@
     </div>
 </div>
 
-<!-- Popup Notifikasi untuk Tab Peminta -->
 <div id="notifPopup" style="display:none; position:fixed; left:50%; top:20%; transform:translateX(-50%); background:rgba(255,255,255,0.98); border:2px solid #0f172a; padding:18px; border-radius:12px; z-index:2000; box-shadow:0 8px 30px rgba(0,0,0,0.3); width:320px; text-align:center;">
     <div style="font-weight:900; font-size:18px; margin-bottom:6px;">Troli Sudah Di Lift!</div>
     <div id="notifPopupText" style="color:#334155; margin-bottom:12px;">Silakan terima fisik di lift.</div>
@@ -186,6 +184,7 @@
     }
 
     let adakahTroliAktif = false;
+    let adakahFgFullAktif = false; // Flag pelindung anti spam FG Full
 
     const icons = {
         pallet: `<svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="4" y="4" width="16" height="4" rx="1"/><rect x="4" y="10" width="16" height="4" rx="1"/><rect x="4" y="16" width="16" height="4" rx="1"/></svg>`,
@@ -212,34 +211,39 @@
     function logoutSistem() { localStorage.clear(); window.location.href = 'login.html'; }
 
     function kirimRequest(jenis) {
-    if ((jenis === 'TROLI_BESAR' || jenis === 'TROLI_KECIL') && adakahTroliAktif) {
-        alert("❌ Request Ditolak! Masih ada antrean TROLI yang aktif / berjalan.");
-        return;
-    }
-    
-    // Pastikan timestamp murni menggunakan waktu detik ini secara real-time
-    const currentEpoch = Date.now(); 
+        if ((jenis === 'TROLI_BESAR' || jenis === 'TROLI_KECIL') && adakahTroliAktif) {
+            alert("❌ Request Ditolak! Masih ada antrean TROLI yang aktif / berjalan.");
+            return;
+        }
 
-    const pending = { 
-        jenisMedia: jenis, 
-        line: sessionUser.line, 
-        lantai: sessionUser.lantai, 
-        createdAt: currentEpoch 
-    };
-    
-    localStorage.setItem(`dhs_pending_${sessionUser.username}`, JSON.stringify(pending));
+        // Proteksi tambahan: blokir jika FG Full masih aktif berjalan
+        if (jenis === 'FG_FULL' && adakahFgFullAktif) {
+            alert("❌ Request Ditolak! Masih ada antrean Kirim FG Full yang berjalan dan belum selesai.");
+            return;
+        }
+        
+        const currentEpoch = Date.now(); 
 
-    fetch(`${API_BASE}/api/request/baru`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        const pending = { 
+            jenisMedia: jenis, 
             line: sessionUser.line, 
             lantai: sessionUser.lantai, 
-            jenisMedia: jenis,
-            waktuEpoch: currentEpoch // Kirim secara eksplisit ke backend
-        })
-    }).catch(err => alert("Gagal memanggil bantuan logistik."));
-}
+            createdAt: currentEpoch 
+        };
+        
+        localStorage.setItem(`dhs_pending_${sessionUser.username}`, JSON.stringify(pending));
+
+        fetch(`${API_BASE}/api/request/baru`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                line: sessionUser.line, 
+                lantai: sessionUser.lantai, 
+                jenisMedia: jenis,
+                waktuEpoch: currentEpoch 
+            })
+        }).catch(err => alert("Gagal memanggil bantuan logistik."));
+    }
 
     window.eksekusiTerimaFisik = function(id, textLabel) {
         fetch(`${API_BASE}/api/request/selesai`, {
@@ -251,7 +255,6 @@
         .then(resData => {
             if(resData.success) {
                 tambahKeRiwayatLokal({ jenisMedia: textLabel.toUpperCase().replace(' ', '_') });
-                // Clear pending notification if this tab had one
                 try { localStorage.removeItem(`dhs_pending_${sessionUser.username}`); stopAlarm(); closeNotifPopup(); } catch(_){}
             }
         }).catch(() => {});
@@ -295,6 +298,7 @@
             const filtered = gabung.filter(item => item.line === sessionUser.line);
             
             adakahTroliAktif = filtered.some(item => item.jenisMedia === 'TROLI_BESAR' || item.jenisMedia === 'TROLI_KECIL');
+            adakahFgFullAktif = filtered.some(item => item.jenisMedia === 'FG_FULL'); // Update status aktif FG Full
             
             if(filtered.length === 0) {
                 boxAktif.innerHTML = `<div class="empty-log">🟢 Jalur Aman. Tidak ada request menggantung.</div>`;
@@ -310,29 +314,26 @@
 
                 if(item.status === 'DELIVERED') { badgeClass = 'status-deliv'; txtStatus = 'DI LIFT'; }
 
-                // 🔥 LOGIKA BARU LANTAI 1 BISA SELESAI INSTAN KAPAN SAJA
                 if (sessionUser.lantai == 1) {
                     tombolHtml = `<button class="btn-instan-lnt1" onclick="window.eksekusiTerimaFisik('${item.id}', '${media.text}')">✓ Selesai</button>`;
                 } else {
-                    // Lantai 2: Tombol hijau baru muncul pas statusnya DI LIFT
                     if(item.status === 'DELIVERED') { 
                         tombolHtml = `<button class="btn-confirm-terima" onclick="window.eksekusiTerimaFisik('${item.id}', '${media.text}')">${icons.check} Confirm Terima</button>`;
                     }
                 }
                 
-                // Di dalam perulangan filtered.forEach(item => { ... })
-if(item.jenisMedia === 'FG_FULL') {
-    // KFG tidak perlu tombol Confirm Terima di tab operator; cukup tampilkan status saja
-    if(item.status === 'WAITING' || item.status === 'WAIT_QC') {
-        txtStatus = 'WAIT QC';
-        badgeClass = 'status-wait';
-        tombolHtml = `<span style="font-size:11px; color:var(--text-sub); font-weight:700;">Menunggu QC Release</span>`;
-    } else if(item.status === 'READY_KFG' || item.status === 'DELIVERED') {
-        txtStatus = 'READY KFG';
-        badgeClass = 'status-deliv';
-        tombolHtml = '';
-    }
-}
+                if(item.jenisMedia === 'FG_FULL') {
+                    if(item.status === 'WAITING' || item.status === 'WAIT_QC') {
+                        txtStatus = 'WAIT QC';
+                        badgeClass = 'status-wait';
+                        tombolHtml = `<span style="font-size:11px; color:var(--text-sub); font-weight:700;">Menunggu QC Release</span>`;
+                    } else if(item.status === 'READY_KFG' || item.status === 'DELIVERED') {
+                        txtStatus = 'READY KFG';
+                        badgeClass = 'status-deliv';
+                        tombolHtml = '';
+                    }
+                }
+
                 boxAktif.innerHTML += `
                     <div class="log-item">
                         <div class="log-left">${media.icon} <span>${media.text}</span></div>
@@ -344,14 +345,12 @@ if(item.jenisMedia === 'FG_FULL') {
             });
         });
 
-        // Notifikasi lokal: tampilkan popup + bunyi alarm hanya untuk tab yang membuat request
         socket.on('DATA_ANTREAN_UPDATE', (data) => {
             try {
                 const pendingRaw = localStorage.getItem(`dhs_pending_${sessionUser.username}`);
                 if(!pendingRaw) return;
                 const pending = JSON.parse(pendingRaw);
                 const gabung = [...data.troli, ...data.fg];
-                // Cari item yang cocok untuk line/lantai/jenisMedia dan sudah DI LIFT (DELIVERED)
                 const matched = gabung.find(it => it.line === pending.line && it.lantai === pending.lantai && it.jenisMedia === pending.jenisMedia && it.status === 'DELIVERED');
                 if(matched) {
                     const isFgFull = matched.jenisMedia === 'FG_FULL';
@@ -365,16 +364,21 @@ if(item.jenisMedia === 'FG_FULL') {
                 }
             } catch (e) { console.error(e); }
         });
+        
+        socket.on('FORCE_RESET_SCREEN', () => {
+            // Berikan sedikit jeda atau langsung reload halaman agar browser memperbarui script terbaru
+            window.location.reload();
+        });
 
         socket.on('FORCE_RESET_SCREEN', () => {
             adakahTroliAktif = false;
+            adakahFgFullAktif = false;
             document.getElementById('boxRequestAktif').innerHTML = `<div class="empty-log">🟢 Jalur Aman. Tidak ada request menggantung.</div>`;
         });
     };
     document.head.appendChild(scriptIo);
     renderRiwayatLokal();
     
-    // --- Notification and Alarm helpers ---
     let alarmOsc = null, alarmCtx = null;
     function playAlarm() {
         try {
@@ -388,14 +392,12 @@ if(item.jenisMedia === 'FG_FULL') {
             gain.gain.exponentialRampToValueAtTime(0.2, alarmCtx.currentTime + 0.05);
             alarmOsc.connect(gain); gain.connect(alarmCtx.destination);
             alarmOsc.start();
-            // pulsing effect
             alarmOsc._pulse = setInterval(() => {
                 gain.gain.cancelScheduledValues(alarmCtx.currentTime);
                 gain.gain.setValueAtTime(0.0001, alarmCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.2, alarmCtx.currentTime + 0.05);
                 setTimeout(() => { gain.gain.exponentialRampToValueAtTime(0.0001, alarmCtx.currentTime + 0.6); }, 500);
             }, 800);
-            // Auto-stop after 10 seconds
             alarmOsc._autoStop = setTimeout(() => { stopAlarm(); }, 10000);
         } catch (e) { console.error('Alarm error', e); }
     }
@@ -424,7 +426,6 @@ if(item.jenisMedia === 'FG_FULL') {
         btnSnooze.style.display = 'inline-block';
         popup.style.display = 'block';
         playAlarm();
-        // Setup buttons
         btnAcknow.onclick = () => {
             if(requestId) window.eksekusiTerimaFisik(requestId, 'Troli');
             closeNotifPopup();

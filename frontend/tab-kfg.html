@@ -441,7 +441,10 @@ function toggleTheme() {
             boxFG.appendChild(div);
         });
     });
-    
+    socket.on('FORCE_RESET_SCREEN', () => {
+            // Berikan sedikit jeda atau langsung reload halaman agar browser memperbarui script terbaru
+            window.location.reload();
+        });
     socket.on('connect', () => {
     console.log("✅ Terhubung ke Server Railway! ID:", socket.id);
 });

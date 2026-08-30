@@ -409,6 +409,10 @@
     <button class="nav-btn" onclick="showSection('home')">🏠 Dashboard Aktif</button>
     <button class="nav-btn" onclick="showSection('qc-panel')">📦 QC Release Control</button>
     <button class="nav-btn" onclick="showSection('history')">📜 History Log</button>
+    
+    <!-- Tombol Refresh Halaman Manual -->
+    <button class="nav-btn" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; border-color: rgba(14, 165, 233, 0.3);" onclick="window.location.reload()">🔄 Refresh Halaman</button>
+
     <div style="flex-grow: 1;"></div>
     <button class="sidebar-menu-item" onclick="tutupSidebar()">Close Menu</button>
 </div>
@@ -470,6 +474,7 @@
             </table>
         </div>
     </div>
+</div>
 
 <script>
     const API_BASE = DATA_CENTER_API_BASE;
@@ -502,10 +507,11 @@
         document.querySelectorAll('.section').forEach(section => {
             section.classList.toggle('active', section.id === id);
         });
+        tutupSidebar();
     }
 
-    const lineLnt1 = ['STP 01', 'LIP 16', 'BTP 03', 'LIP 09', 'VSN 05', 'VMN 06', 'BRP 04', 'VMN 05', 'VSN 03', 'BRP 02', 'VAM 03', 'BRP 01'];
-    const lineLnt2 = ['EMP 16', 'LIP 11', 'BTP 04', 'LIP 10', 'JRP 02', 'FOP 03', 'BTP 01', 'BTP 02', 'LIP 18', 'VAM 02', 'SBP 01', 'VMN 04', 'LIP 09', 'LIP 06', 'LIP 08', 'ALP 03', 'LIP 12'];
+    const lineLnt1 = ['STP 01', 'LIP 16', 'BTP 03', 'VSN 05', 'VMN 06', 'BRP 04', 'VMN 05', 'VSN 03', 'BRP 02', 'VAM 03', 'BRP 01', 'VMN 07'];
+    const lineLnt2 = ['EMP 16', 'LIP 11', 'BTP 04', 'LIP 10', 'JRP 02', 'FOP 03', 'BTP 01', 'BTP 02', 'LIP 18', 'VAM 02', 'SBP 01', 'VMN 04', 'LIP 09', 'LIP 06', 'LIP 08', 'ALP 03', 'LIP 12', 'VSN 04', 'SPP 01', 'LIP 14', 'VMN 02'];
 
     function getStatusClass(status) {
         if (status === 'WAIT_KFG') return 'status-waitkfg';
@@ -525,7 +531,6 @@
     function requestQCRelease(line) {
         const normalizedLine = String(line).trim().toUpperCase();
         showStatusMessage(`Mencari task FG untuk line ${normalizedLine}...`, 'info');
-        // Ambil status saat ini, cari FG yang menunggu QC untuk line ini
         fetch(`${API_BASE}/api/request/status`, { method: 'GET' })
             .then(res => res.json())
             .then(json => {
@@ -547,7 +552,6 @@
                         }
                     }).catch(() => showStatusMessage('Gagal koneksi ke backend untuk QC release.', 'error'));
                 } else {
-                    // Tidak menemukan task existing -> buat baru sebagai fallback
                     const lantai = resolveLantaiFromLine(line);
                     const payload = { line: normalizedLine, lantai, jenisMedia: 'FG_FULL', status: 'WAIT_KFG' };
                     fetch(`${API_BASE}/api/request/baru`, {
@@ -616,34 +620,32 @@
         document.getElementById('qc-active-tasks').innerHTML = emptyHtml;
     }
 
-   function createTaskCardElement(data, prefix = '') {
-    const card = document.createElement('div');
-    card.id = `${prefix}task-${data.id}`;
-    card.className = 'card-progress';
-    
-    let actionButtonHtml = '';
-    
-    // Jika jenis media FG_FULL dan status masih WAITING/WAIT_QC, berikan tombol khusus QC Release
-    if (data.jenisMedia === 'FG_FULL' && (data.status === 'WAITING' || data.status === 'WAIT_QC')) {
-        actionButtonHtml = `<button style="background:#d97706; color:white; border:none; border-radius:10px; padding:8px 12px; cursor:pointer; font-weight:700;" onclick="eksekusiQCRelease('${data.id}')">🚀 Release QC</button>`;
-    } else {
-        // Untuk Troli atau FG Full yang sudah di-release QC (status READY_KFG / DELIVERED)
-        actionButtonHtml = `<button style="background:#10b981; color:white; border:none; border-radius:10px; padding:8px 12px; cursor:pointer; font-weight:700;" onclick="konfirmasiSelesai('${data.id}')">✅ Selesaikan</button>`;
+    function createTaskCardElement(data, prefix = '') {
+        const card = document.createElement('div');
+        card.id = `${prefix}task-${data.id}`;
+        card.className = 'card-progress';
+        
+        let actionButtonHtml = '';
+        if (data.jenisMedia === 'FG_FULL' && (data.status === 'WAITING' || data.status === 'WAIT_QC')) {
+            actionButtonHtml = `<button style="background:#d97706; color:white; border:none; border-radius:10px; padding:8px 12px; cursor:pointer; font-weight:700;" onclick="eksekusiQCRelease('${data.id}')">🚀 Release QC</button>`;
+        } else {
+            actionButtonHtml = `<button style="background:#10b981; color:white; border:none; border-radius:10px; padding:8px 12px; cursor:pointer; font-weight:700;" onclick="konfirmasiSelesai('${data.id}')">✅ Selesaikan</button>`;
+        }
+
+        card.innerHTML = `
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                <div>
+                    <div style="font-size:16px; font-weight:700;">${data.line}</div>
+                    <div style="font-size:12px; color:#94a3b8;">Lantai ${data.lantai || '-'} • ${getMediaText(data.jenisMedia)}</div>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <span class="status-pill ${getStatusClass(data.status)}">${data.status}</span>
+                    ${actionButtonHtml}
+                </div>
+            </div>`;
+        return card;
     }
 
-    card.innerHTML = `
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-            <div>
-                <div style="font-size:16px; font-weight:700;">${data.line}</div>
-                <div style="font-size:12px; color:#94a3b8;">Lantai ${data.lantai || '-'} • ${getMediaText(data.jenisMedia)}</div>
-            </div>
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                <span class="status-pill ${getStatusClass(data.status)}">${data.status}</span>
-                ${actionButtonHtml}
-            </div>
-        </div>`;
-    return card;
-}
     function upsertTaskCard(data) {
         activeTaskMap.set(data.id, data);
 
@@ -658,7 +660,6 @@
             activeContainer.appendChild(cardHtml);
         }
 
-        // QC panel harus menampilkan handoff operator -> QC (WAIT_QC / WAITING) dan release-dengan WAIT_KFG
         const isQcVisibleStatus = ['WAIT_QC', 'WAITING', 'WAIT_KFG'].includes(data.status);
         if (isQcVisibleStatus && data.jenisMedia === 'FG_FULL') {
             const existingQcCard = document.getElementById(`qc-task-${data.id}`);
@@ -669,7 +670,6 @@
                 qcContainer.appendChild(qcCardHtml);
             }
         } else {
-            // jika sebelumnya ada card QC tapi sekarang bukan status QC, hapus
             const prevQc = document.getElementById(`qc-task-${data.id}`);
             if (prevQc) prevQc.remove();
         }
@@ -758,7 +758,6 @@
 
         historyData.forEach(item => {
             const tr = document.createElement('tr');
-            
             let waktuMinta = item.waktu || '-';
             let waktuRelease = item.waktuRelease && item.waktuRelease !== '-' ? item.waktuRelease : '-';
             let waktuSelesai = item.waktuSelesai || '-';
@@ -774,14 +773,9 @@
             tbody.appendChild(tr);
         });
     }
-    // Footer status is rendered via static HTML already in DOM.
-    socket.on('connect', () => {
-        console.log('Socket connected ke DHS server');
-    });
 
-    socket.on('connect_error', (error) => {
-        console.warn('Socket connection error:', error);
-    });
+    socket.on('connect', () => { console.log('Socket connected ke DHS server'); });
+    socket.on('connect_error', (error) => { console.warn('Socket connection error:', error); });
 
     const qcNotifShownIds = new Set();
 
@@ -798,6 +792,10 @@
         });
     });
 
+    socket.on('FORCE_RESET_SCREEN', () => {
+        window.location.reload();
+    });
+
     socket.on('ANTREAN_BARU_MASUK', data => {
         upsertTaskCard(data);
         showStatusMessage(`Task baru diterima: ${data.line} (${data.status})`, 'info');
@@ -810,10 +808,12 @@
             }
         } catch (e) { console.error(e); }
     });
+
     socket.on('ANTREAN_SELESAI_SYNC', id => {
         removeTaskCard(id);
         showStatusMessage(`Task ${id} telah selesai oleh KFG`, 'success');
     });
+
     socket.on('HISTORY_UPDATE', renderTable);
     socket.on('KFG_SELESAI_ACK', ack => {
         if (ack && ack.success) {
@@ -822,9 +822,8 @@
             showStatusMessage(`Gagal menyelesaikan task ${ack?.id || ''}`, 'error');
         }
     });
-    socket.on('disconnect', () => {
-        showStatusMessage('Koneksi socket terputus.', 'error');
-    });
+
+    socket.on('disconnect', () => { showStatusMessage('Koneksi socket terputus.', 'error'); });
 
     renderEmptyActiveTasks();
 
@@ -849,76 +848,76 @@
     }
 
     generateQCButtons();
-    function eksekusiQCRelease(id) {
-    showStatusMessage(`Memproses QC Release untuk ID ${id}...`, 'info');
-    
-    fetch(`${API_BASE}/api/request/qc-release`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: id })
-    })
-    .then(async res => {
-        const data = await res.json().catch(() => ({}));
-        if (res.ok && data.success) {
-            showStatusMessage(`QC Release berhasil! Barang masuk antrean KFG.`, 'success');
-        } else {
-            showStatusMessage(`Gagal melakukan QC Release.`, 'error');
-        }
-    })
-    .catch(() => {
-        showStatusMessage('Gagal koneksi ke backend untuk QC Release.', 'error');
-    });
-}
 
-// Alarm & QC notification helpers
-let qcAlarmOsc = null, qcAlarmCtx = null;
-function playQcAlarm() {
-    try {
-        if (qcAlarmOsc) return;
-        qcAlarmCtx = new (window.AudioContext || window.webkitAudioContext)();
-        qcAlarmOsc = qcAlarmCtx.createOscillator();
-        const gain = qcAlarmCtx.createGain();
-        qcAlarmOsc.type = 'sine';
-        qcAlarmOsc.frequency.setValueAtTime(880, qcAlarmCtx.currentTime);
-        gain.gain.setValueAtTime(0.0001, qcAlarmCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.2, qcAlarmCtx.currentTime + 0.05);
-        qcAlarmOsc.connect(gain); gain.connect(qcAlarmCtx.destination);
-        qcAlarmOsc.start();
-        qcAlarmOsc._pulse = setInterval(() => {
-            gain.gain.cancelScheduledValues(qcAlarmCtx.currentTime);
+    function eksekusiQCRelease(id) {
+        showStatusMessage(`Memproses QC Release untuk ID ${id}...`, 'info');
+        fetch(`${API_BASE}/api/request/qc-release`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+        })
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success) {
+                showStatusMessage(`QC Release berhasil! Barang masuk antrean KFG.`, 'success');
+            } else {
+                showStatusMessage(`Gagal melakukan QC Release.`, 'error');
+            }
+        })
+        .catch(() => {
+            showStatusMessage('Gagal koneksi ke backend untuk QC Release.', 'error');
+        });
+    }
+
+    let qcAlarmOsc = null, qcAlarmCtx = null;
+    function playQcAlarm() {
+        try {
+            if (qcAlarmOsc) return;
+            qcAlarmCtx = new (window.AudioContext || window.webkitAudioContext)();
+            qcAlarmOsc = qcAlarmCtx.createOscillator();
+            const gain = qcAlarmCtx.createGain();
+            qcAlarmOsc.type = 'sine';
+            qcAlarmOsc.frequency.setValueAtTime(880, qcAlarmCtx.currentTime);
             gain.gain.setValueAtTime(0.0001, qcAlarmCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.2, qcAlarmCtx.currentTime + 0.05);
-            setTimeout(() => { gain.gain.exponentialRampToValueAtTime(0.0001, qcAlarmCtx.currentTime + 0.6); }, 500);
-        }, 800);
-        qcAlarmOsc._autoStop = setTimeout(() => { stopQcAlarm(); }, 10000);
-    } catch (e) { console.error('QC Alarm error', e); }
-}
-function stopQcAlarm() {
-    try {
-        if (!qcAlarmOsc) return;
-        clearInterval(qcAlarmOsc._pulse);
-        if (qcAlarmOsc._autoStop) { clearTimeout(qcAlarmOsc._autoStop); qcAlarmOsc._autoStop = null; }
-        qcAlarmOsc.stop(); qcAlarmOsc.disconnect(); qcAlarmOsc = null;
-        if (qcAlarmCtx && typeof qcAlarmCtx.close === 'function') qcAlarmCtx.close(); qcAlarmCtx = null;
-    } catch(_){}
-}
+            qcAlarmOsc.connect(gain); gain.connect(qcAlarmCtx.destination);
+            qcAlarmOsc.start();
+            qcAlarmOsc._pulse = setInterval(() => {
+                gain.gain.cancelScheduledValues(qcAlarmCtx.currentTime);
+                gain.gain.setValueAtTime(0.0001, qcAlarmCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.2, qcAlarmCtx.currentTime + 0.05);
+                setTimeout(() => { gain.gain.exponentialRampToValueAtTime(0.0001, qcAlarmCtx.currentTime + 0.6); }, 500);
+            }, 800);
+            qcAlarmOsc._autoStop = setTimeout(() => { stopQcAlarm(); }, 10000);
+        } catch (e) { console.error('QC Alarm error', e); }
+    }
 
-let qcPopupAutoTimer = null;
-function showQcNotif(message, requestId) {
-    const popup = document.getElementById('qcNotifPopup');
-    const txt = document.getElementById('qcNotifText');
-    if(!popup || !txt) return;
-    txt.innerText = message || 'FG Full menunggu QC Release.';
-    popup.style.display = 'block';
-    playQcAlarm();
+    function stopQcAlarm() {
+        try {
+            if (!qcAlarmOsc) return;
+            clearInterval(qcAlarmOsc._pulse);
+            if (qcAlarmOsc._autoStop) { clearTimeout(qcAlarmOsc._autoStop); qcAlarmOsc._autoStop = null; }
+            qcAlarmOsc.stop(); qcAlarmOsc.disconnect(); qcAlarmOsc = null;
+            if (qcAlarmCtx && typeof qcAlarmCtx.close === 'function') qcAlarmCtx.close(); qcAlarmCtx = null;
+        } catch(_){}
+    }
 
-    if (qcPopupAutoTimer) clearTimeout(qcPopupAutoTimer);
-    qcPopupAutoTimer = setTimeout(() => {
-        popup.style.display = 'none';
-        stopQcAlarm();
-        qcPopupAutoTimer = null;
-    }, 10000);
-}
+    let qcPopupAutoTimer = null;
+    function showQcNotif(message, requestId) {
+        const popup = document.getElementById('qcNotifPopup');
+        const txt = document.getElementById('qcNotifText');
+        if(!popup || !txt) return;
+        txt.innerText = message || 'FG Full menunggu QC Release.';
+        popup.style.display = 'block';
+        playQcAlarm();
+
+        if (qcPopupAutoTimer) clearTimeout(qcPopupAutoTimer);
+        qcPopupAutoTimer = setTimeout(() => {
+            popup.style.display = 'none';
+            stopQcAlarm();
+            qcPopupAutoTimer = null;
+        }, 10000);
+    }
 </script>
 
 <footer class="factory-footer">
