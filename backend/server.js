@@ -3,6 +3,7 @@ const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const https = require('https');
 
 // 1. Inisialisasi 'app'
 const expressApp = express();
@@ -13,69 +14,46 @@ expressApp.use(express.static(path.join(__dirname, '../')));
 expressApp.use(cors());
 expressApp.use(express.json());
 
-const server = http.createServer(expressApp);
-
-// 🛠️ FIX SOCKET DISCONNECT: Tambahkan konfigurasi pingInterval & pingTimeout yang lebih longgar
-// agar browser tidak cepat memutuskan koneksi saat tab ditinggal di background.
-const io = new Server(server, { 
-    cors: { origin: "*" },
-    pingInterval: 25000, // Kirim heartbeat tiap 25 detik
-    pingTimeout: 60000   // Tunggu sampai 60 detik sebelum anggap disconnect
+// ==================== [HEALTH CHECK ROUTE UNTUK UPTIMEROBOT] ====================
+expressApp.get('/', (req, res) => {
+    return res.status(200).send('DHS Engine Server is Alive and Running!');
 });
 
-// ==================== [DATABASE MASTER USER PABRIKAN] ====================
-const MASTER_USER_DB = {
-    // 🏢 AREA LANTAI 1
-    "stp01": { password: "kemas", line: "STP 01", lantai: 1, role: "OPERATOR" },
-    "lip16": { password: "kemas", line: "LIP 16", lantai: 1, role: "OPERATOR" },
-    "btp03": { password: "kemas", line: "BTP 03", lantai: 1, role: "OPERATOR" },
-    "vsn05": { password: "kemas", line: "VSN 05", lantai: 1, role: "OPERATOR" },
-    "vmn06": { password: "kemas", line: "VMN 06", lantai: 1, role: "OPERATOR" },
-    "brp04": { password: "kemas", line: "BRP 04", lantai: 1, role: "OPERATOR" },
-    "vmn05": { password: "kemas", line: "VMN 05", lantai: 1, role: "OPERATOR" },
-    "vsn03": { password: "kemas", line: "VSN 03", lantai: 1, role: "OPERATOR" },
-    "brp02": { password: "kemas", line: "BRP 02", lantai: 1, role: "OPERATOR" },
-    "vam03": { password: "kemas", line: "VAM 03", lantai: 1, role: "OPERATOR" },
-    "brp01": { password: "kemas", line: "BRP 01", lantai: 1, role: "OPERATOR" },
+const server = http.createServer(expressApp);
 
-    // 🏢 AREA LANTAI 2
-    "emp16": { password: "kemas", line: "EMP 16", lantai: 2, role: "OPERATOR" },
-    "lip11": { password: "kemas", line: "LIP 11", lantai: 2, role: "OPERATOR" },
-    "btp04": { password: "kemas", line: "BTP 04", lantai: 2, role: "OPERATOR" },
-    "lip10": { password: "kemas", line: "LIP 10", lantai: 2, role: "OPERATOR" },
-    "jrp02": { password: "kemas", line: "JRP 02", lantai: 2, role: "OPERATOR" },
-    "fop03": { password: "kemas", line: "FOP 03", lantai: 2, role: "OPERATOR" },
-    "btp01": { password: "kemas", line: "BTP 01", lantai: 2, role: "OPERATOR" },
-    "btp02": { password: "kemas", line: "BTP 02", lantai: 2, role: "OPERATOR" },
-    "lip18": { password: "kemas", line: "LIP 18", lantai: 2, role: "OPERATOR" },
-    "vam02": { password: "kemas", line: "VAM 02", lantai: 2, role: "OPERATOR" },
-    "sbp01": { password: "kemas", line: "SBP 01", lantai: 2, role: "OPERATOR" },
-    "vmn04": { password: "kemas", line: "VMN 04", lantai: 2, role: "OPERATOR" },
-    "lip09": { password: "kemas", line: "LIP 09", lantai: 2, role: "OPERATOR" },
-    "lip06": { password: "kemas", line: "LIP 06", lantai: 2, role: "OPERATOR" },
-    "lip08": { password: "kemas", line: "LIP 08", lantai: 2, role: "OPERATOR" },
-    "alp03": { password: "kemas", line: "ALP 03", lantai: 2, role: "OPERATOR" },
-    "lip12": { password: "kemas", line: "LIP 12", lantai: 2, role: "OPERATOR" },
-    
-    // 🚚 LOGISTIK TIM GUDANG KFG & DISPLAY
-    "kfg_gudang": { password: "kfg123", line: "GUDANG KFG", lantai: 0, role: "KFG" },
-    "kfg_tv": { password: "tv123", line: "TV MONITOR GUDANG", lantai: 0, role: "TV" },
-    "qlt_center": { password: "qlt123", line: "ADMIN QLT", lantai: 0, role: "ADMIN" }
-};
+// 🛠️ FIX SOCKET DISCONNECT: Konfigurasi pingInterval & pingTimeout yang lebih longgar
+const io = new Server(server, { 
+    cors: { origin: "*" },
+    pingInterval: 25000, 
+    pingTimeout: 60000   
+});
+
+// ==================== [DATABASE MASTER USER AMAN (DARI ENV)] ====================
+let MASTER_USER_DB = {};
+
+if (process.env.USERS_JSON) {
+    try {
+        MASTER_USER_DB = JSON.parse(process.env.USERS_JSON);
+    } catch (err) {
+        console.error("Gagal membaca USERS_JSON dari Environment Variable:", err);
+    }
+} else {
+    console.warn("PERINGATAN: USERS_JSON belum diatur di Render Environment Variables!");
+}
 
 let antreanTroli = []; 
 let antreanFG = [];    
 let historyLog = [];   
 let currentShift = 'SHIFT 1';
 
-const lineLnt1 = ['STP 01','LIP 16','BTP 03','LIP 09','VSN 05','VMN 06','BRP 04','VMN 05','VSN 03','BRP 02','VAM 03','BRP 01'];
-const lineLnt2 = ['EMP 16','LIP 11','BTP 04','LIP 10','JRP 02','FOP 03','BTP 01','BTP 02','LIP 18','VAM 02','SBP 01','VMN 04','LIP 09','LIP 06','LIP 08','ALP 03','LIP 12'];
+const lineLnt1 = ['STP 01','LIP 16','BTP 03','LIP 09','VSN 05','VMN 06','BRP 04','VMN 05','VSN 03','BRP 02','VAM 03','BRP 01','VMN 07'];
+const lineLnt2 = ['EMP 16','LIP 11','BTP 04','LIP 10','JRP 02','FOP 03','BTP 01','BTP 02','LIP 18','VAM 02','SBP 01','VMN 04','LIP 09','LIP 06','LIP 08','ALP 03','LIP 12','VSN 04','SPP 01','LIP 14','VMN 02'];
 
 // Helper untuk format Tanggal dan Jam Lengkap (WIB Lokal)
 function getFormattedTimestamp() {
     const now = new Date();
     const tanggal = now.toLocaleDateString('id-ID'); // Format: DD/MM/YYYY
-    const jam = now.toLocaleTimeString('id-ID');     // Format: HH:MM:SS WIB
+    const jam = now.toLocaleTimeString('id-ID');    // Format: HH:MM:SS WIB
     return `${tanggal} ${jam}`;
 }
 
@@ -85,6 +63,35 @@ function resolveLineLantai(line) {
     if (lineLnt1.includes(normalized)) return 1;
     if (lineLnt2.includes(normalized)) return 2;
     return 1;
+}
+
+// ==================== [FUNGSI KIRIM HISTORY KE GOOGLE SHEETS] ====================
+function saveHistoryToGoogleSheets(dataSelesai) {
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbxoxixwY5QUu5BkYWGNSqfG7AkJSWRNkGzXyy68kuuLkKdCO_dPrh0x9DQXu6Wydxmdlg/exec";
+
+    const postData = JSON.stringify(dataSelesai);
+    const urlObj = new URL(scriptUrl);
+
+    const options = {
+        hostname: urlObj.hostname,
+        path: urlObj.pathname + urlObj.search,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData)
+        }
+    };
+
+    const req = https.request(options, (res) => {
+        // Respon sukses dari Google Sheets Web App
+    });
+
+    req.on('error', (e) => {
+        console.error("Gagal menyimpan history ke Google Sheets:", e.message);
+    });
+
+    req.write(postData);
+    req.end();
 }
 
 function completeRequestById(id) {
@@ -101,6 +108,9 @@ function completeRequestById(id) {
     dataSelesai.waktuSelesai = getFormattedTimestamp(); 
     historyLog.push(dataSelesai);
     
+    // Kirim otomatis ke Google Sheets agar data aman permanen
+    saveHistoryToGoogleSheets(dataSelesai);
+
     io.emit('ANTREAN_SELESAI_SYNC', id);
     broadcastDataAwal();
     io.emit('HISTORY_UPDATE', historyLog);
@@ -143,8 +153,6 @@ expressApp.post('/api/request/baru', (req, res) => {
     const normalizedMedia = jenisMedia || 'TROLI_KECIL';
     
     const waktuMintaStr = getFormattedTimestamp(); 
-    
-    // 🛠️ FIX JAM CARD: Gunakan Date.now() real-time server agar hitungan timer di frontend akurat
     const epochSekarang = Date.now();
 
     const dataBaru = {
@@ -153,7 +161,7 @@ expressApp.post('/api/request/baru', (req, res) => {
         lantai: typeof lantai === 'number' ? lantai : resolveLineLantai(line),
         jenisMedia: normalizedMedia,
         waktu: waktuMintaStr,        
-        waktuEpoch: epochSekarang,    // Kunci utama agar timer card berjalan pas dari 00:00
+        waktuEpoch: epochSekarang,    
         waktuRelease: '-',            
         waktuSelesai: '-',            
         status: status || (normalizedMedia === 'FG_FULL' ? 'WAIT_QC' : 'WAIT_KFG')
@@ -201,7 +209,6 @@ expressApp.post('/api/request/qc-release', (req, res) => {
 
     antreanFG[idx].status = 'READY_KFG';
     antreanFG[idx].waktuRelease = getFormattedTimestamp(); 
-    // Perbarui juga waktuReleaseEpoch agar timer FG Full berjalan tepat setelah dirilis QC
     antreanFG[idx].waktuReleaseEpoch = Date.now(); 
 
     io.emit('ANTREAN_BARU_MASUK', antreanFG[idx]);
