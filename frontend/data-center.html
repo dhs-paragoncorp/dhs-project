@@ -26,7 +26,10 @@
 
         body {
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-            background: radial-gradient(circle at top left, #121b33, #080d1a);
+            background:
+                radial-gradient(ellipse at 8% 4%, rgba(14, 165, 233, 0.14), transparent 28%),
+                radial-gradient(ellipse at 92% 18%, rgba(16, 185, 129, 0.1), transparent 26%),
+                linear-gradient(145deg, #080d1a 0%, #0b1222 50%, #080d1a 100%);
             color: var(--text-main);
             margin: 0;
             min-height: 100vh;
@@ -105,13 +108,13 @@
         }
 
         .data-container {
-            width: min(100%, 1100px);
-            background: var(--panel-bg);
-            border-radius: 24px;
-            border: 1px solid var(--panel-border);
-            padding: 30px;
+            width: min(100%, 1500px);
+            background: linear-gradient(145deg, rgba(17, 27, 47, 0.94), rgba(10, 17, 31, 0.94));
+            border-radius: 28px;
+            border: 1px solid rgba(148, 163, 184, 0.14);
+            padding: 28px;
             box-sizing: border-box;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.04);
             backdrop-filter: blur(24px);
             position: relative;
             z-index: 1;
@@ -165,6 +168,385 @@
             margin-top: 4px;
         }
 
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .connection-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.72);
+            color: #cbd5e1;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #f59e0b;
+            box-shadow: 0 0 12px currentColor;
+        }
+
+        .connection-status.connected {
+            border-color: rgba(16, 185, 129, 0.3);
+            color: #6ee7b7;
+        }
+
+        .connection-status.connected .connection-dot {
+            background: #34d399;
+        }
+
+        .connection-status.disconnected {
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .connection-status.disconnected .connection-dot {
+            background: #f87171;
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 0 0 16px;
+        }
+
+        .section-heading h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #e2e8f0;
+        }
+
+        .section-kicker {
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+        }
+
+        .section-kicker.sync-ok { color: #6ee7b7; }
+        .section-kicker.sync-error { color: #fca5a5; }
+
+        .hero-panel {
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 24px;
+            min-height: 164px;
+            margin: 4px 0 14px;
+            padding: 22px 26px;
+            border: 1px solid rgba(56, 189, 248, 0.22);
+            border-radius: 22px;
+            background:
+                radial-gradient(circle at 82% 15%, rgba(34, 211, 238, 0.22), transparent 26%),
+                radial-gradient(circle at 95% 100%, rgba(16, 185, 129, 0.2), transparent 34%),
+                linear-gradient(115deg, rgba(14, 36, 62, 0.98), rgba(15, 28, 48, 0.95) 58%, rgba(12, 44, 51, 0.94));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 18px 42px rgba(0,0,0,0.2);
+        }
+
+        .hero-panel::after {
+            content: '';
+            position: absolute;
+            width: 270px;
+            height: 270px;
+            right: 6%;
+            top: -112px;
+            border: 1px solid rgba(125, 211, 252, 0.16);
+            border-radius: 50%;
+            box-shadow: 0 0 0 28px rgba(125, 211, 252, 0.025), 0 0 0 58px rgba(125, 211, 252, 0.02);
+            pointer-events: none;
+        }
+
+        .hero-copy,
+        .hero-clock {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 9px;
+            color: #7dd3fc;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 1.7px;
+            text-transform: uppercase;
+        }
+
+        .hero-eyebrow::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #22d3ee;
+            box-shadow: 0 0 14px #22d3ee;
+        }
+
+        .hero-title {
+            margin: 0;
+            font-size: clamp(24px, 2.5vw, 32px);
+            line-height: 1.1;
+            letter-spacing: -1.2px;
+            color: #f8fafc;
+        }
+
+        .hero-description {
+            max-width: 560px;
+            margin: 8px 0 0;
+            color: #a9bdd3;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .hero-clock {
+            min-width: 158px;
+            padding: 12px 15px;
+            border: 1px solid rgba(186, 230, 253, 0.18);
+            border-radius: 16px;
+            background: rgba(3, 12, 26, 0.36);
+            backdrop-filter: blur(12px);
+        }
+
+        .hero-clock-label {
+            color: #8ca4bc;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+        }
+
+        .hero-clock-time {
+            margin-top: 5px;
+            color: #e0f2fe;
+            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .hero-clock-date {
+            margin-top: 3px;
+            color: #94a3b8;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .metric-card {
+            position: relative;
+            overflow: hidden;
+            min-height: 94px;
+            padding: 15px 18px;
+            border: 1px solid rgba(148, 163, 184, 0.13);
+            border-radius: 18px;
+            background: linear-gradient(145deg, rgba(22, 34, 55, 0.92), rgba(13, 22, 39, 0.92));
+        }
+
+        .metric-card::after {
+            content: '';
+            position: absolute;
+            right: -22px;
+            bottom: -45px;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--metric-glow, rgba(34, 211, 238, 0.12));
+            filter: blur(2px);
+        }
+
+        .metric-card.troli { --metric-glow: rgba(59, 130, 246, 0.13); }
+        .metric-card.fg { --metric-glow: rgba(16, 185, 129, 0.14); }
+
+        .metric-label {
+            position: relative;
+            z-index: 1;
+            color: #91a3b8;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            position: relative;
+            z-index: 1;
+            display: block;
+            margin-top: 6px;
+            color: #f8fafc;
+            font-size: 30px;
+            font-weight: 850;
+            line-height: 1;
+        }
+
+        .metric-footnote {
+            position: relative;
+            z-index: 1;
+            display: block;
+            margin-top: 5px;
+            color: #657991;
+            font-size: 11px;
+        }
+
+        .task-section-heading {
+            margin-bottom: 16px;
+        }
+
+        .task-section-heading h3 {
+            font-size: 19px;
+        }
+
+        .grid-shortcut {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+            gap: 16px;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            min-height: 112px;
+            padding: 22px 24px;
+            border: 1px dashed rgba(148, 163, 184, 0.2);
+            border-radius: 18px;
+            background: linear-gradient(110deg, rgba(15, 27, 45, 0.8), rgba(12, 22, 38, 0.42));
+            color: #a9bdd3;
+        }
+
+        .empty-state-icon {
+            display: grid;
+            place-items: center;
+            flex: 0 0 48px;
+            width: 48px;
+            height: 48px;
+            border: 1px solid rgba(56, 189, 248, 0.18);
+            border-radius: 15px;
+            background: rgba(14, 165, 233, 0.08);
+            color: #7dd3fc;
+            font-size: 21px;
+        }
+
+        .empty-state-title {
+            color: #dbeafe;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .empty-state-copy {
+            margin-top: 5px;
+            color: #8294aa;
+            font-size: 12px;
+        }
+
+        .card-progress {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 16px;
+            min-height: 132px;
+            padding: 16px;
+            background:
+                radial-gradient(circle at 100% 0%, rgba(14, 165, 233, 0.09), transparent 38%),
+                linear-gradient(145deg, rgba(24, 38, 61, 0.96), rgba(13, 22, 39, 0.96));
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .card-progress > div:first-child > div:first-child {
+            color: #f1f5f9;
+            font-size: 18px !important;
+            letter-spacing: 0.2px;
+        }
+
+        .task-card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .task-location {
+            color: #9fb0c5;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .task-elapsed {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            width: fit-content;
+            padding: 6px 9px;
+            border: 1px solid rgba(56, 189, 248, 0.18);
+            border-radius: 9px;
+            background: rgba(8, 47, 73, 0.32);
+            color: #7dd3fc;
+            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+            font-size: 11px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .task-elapsed-label {
+            color: #7188a1;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+        }
+
+        @media (min-width: 701px) and (max-height: 820px) {
+            body { padding: 16px 22px; }
+            .data-container { padding: 22px 26px; }
+            .header { padding-bottom: 14px; margin-bottom: 16px; }
+            .hero-panel { min-height: 128px; padding: 16px 22px; margin-bottom: 10px; }
+            .hero-title { font-size: 27px; }
+            .hero-description { margin-top: 6px; font-size: 12px; }
+            .hero-clock { padding: 9px 13px; }
+            .hero-clock-time { font-size: 19px; }
+            .metrics-grid { gap: 10px; margin-bottom: 17px; }
+            .metric-card { min-height: 78px; padding: 11px 15px; }
+            .metric-value { margin-top: 4px; font-size: 26px; }
+            .metric-footnote { margin-top: 3px; font-size: 10px; }
+            .task-section-heading { margin-bottom: 10px; }
+        }
+
+        .table-wrapper {
+            border-color: rgba(125, 211, 252, 0.13);
+            background: rgba(9, 17, 31, 0.72);
+        }
+
+        thead tr {
+            background: linear-gradient(90deg, rgba(14, 116, 144, 0.18), rgba(15, 23, 42, 0.3));
+            color: #7dd3fc;
+        }
+
         .btn-export {
             background: linear-gradient(135deg, #059669, #10b981);
             color: #fff;
@@ -184,6 +566,29 @@
 
         .btn-export:active {
             transform: scale(0.98);
+        }
+
+        .btn-alarm {
+            background: rgba(14, 165, 233, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.32);
+            border-radius: 12px;
+            color: #bae6fd;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 800;
+            padding: 12px 14px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .btn-alarm:hover {
+            background: rgba(14, 165, 233, 0.22);
+            border-color: rgba(56, 189, 248, 0.55);
+        }
+
+        .btn-alarm.enabled {
+            background: rgba(16, 185, 129, 0.12);
+            border-color: rgba(16, 185, 129, 0.32);
+            color: #6ee7b7;
         }
 
         .message-bar {
@@ -305,20 +710,32 @@
             display: block;
         }
 
-        .grid-shortcut {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
+        .card-progress:hover {
+            border-color: rgba(56, 189, 248, 0.38);
+            transform: translateY(-2px);
         }
 
         .card-progress {
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            padding: 18px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .table-wrapper {
+            box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 700px) {
+            body { padding: 14px; }
+            .data-container { padding: 20px 16px; border-radius: 18px; }
+            .header { align-items: flex-start; flex-direction: column; }
+            .header-actions { width: 100%; }
+            .header-actions > * { flex: 1; justify-content: center; }
+            .header h2 { font-size: 20px; }
+            .hero-panel { min-height: unset; align-items: flex-start; flex-direction: column; padding: 24px 20px; }
+            .hero-clock { width: 100%; }
+            .metrics-grid { grid-template-columns: 1fr; gap: 10px; }
+            .metric-card { min-height: 100px; }
+            .section-heading { align-items: flex-start; flex-direction: column; }
         }
 
         .factory-footer {
@@ -327,9 +744,9 @@
             background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
             border-radius: 14px;
             padding: 12px 18px;
-            max-width: 1100px;
+            max-width: 1500px;
             box-sizing: border-box;
-            width: min(100%, 1100px);
+            width: min(100%, 1500px);
         }
 
         .footer-inner {
@@ -414,6 +831,7 @@
     <button class="nav-btn" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; border-color: rgba(14, 165, 233, 0.3);" onclick="window.location.reload()">🔄 Refresh Halaman</button>
 
     <div style="flex-grow: 1;"></div>
+    <button class="sidebar-menu-item" style="background:rgba(239,68,68,0.14); color:#fca5a5; border-color:rgba(239,68,68,0.3);" onclick="logoutSistem()">🚪 Log Out Platform</button>
     <button class="sidebar-menu-item" onclick="tutupSidebar()">Close Menu</button>
 </div>
 
@@ -426,13 +844,52 @@
                 <div class="subtext">📜 Tab Riwayat & Laporan Produksi</div>
             </div>
         </div>
-        <button class="btn-export" onclick="tarikDataExcel()">📥 Tarik Data (CSV)</button>
+        <div class="header-actions">
+            <div class="connection-status" id="connectionStatus" role="status" aria-live="polite">
+                <span class="connection-dot"></span>
+                <span id="connectionStatusText">Menghubungkan...</span>
+            </div>
+            <button class="btn-alarm" id="enableAlarmButton" onclick="enableAlarm()">🔔 Aktifkan Alarm</button>
+            <button class="btn-export" onclick="tarikDataExcel()">📥 Tarik Data (CSV)</button>
+        </div>
     </div>
 
     <div id="statusMessage" class="message-bar info"></div>
 
     <div id="home" class="section active">
-        <h3 style="margin-top:0;">Active Tasks</h3>
+        <div class="hero-panel">
+            <div class="hero-copy">
+                <div class="hero-eyebrow">Factory operations • data center</div>
+                <h1 class="hero-title">Pusat Kendali Produksi</h1>
+                <p class="hero-description">Pantau antrean dan status penanganan produksi secara real-time.</p>
+            </div>
+            <div class="hero-clock">
+                <div class="hero-clock-label">Waktu operasional</div>
+                <div id="liveClockTime" class="hero-clock-time">--:--:--</div>
+                <div id="liveClockDate" class="hero-clock-date">Memuat tanggal...</div>
+            </div>
+        </div>
+        <div class="metrics-grid" aria-label="Ringkasan tugas aktif">
+            <div class="metric-card">
+                <span class="metric-label">Total tugas aktif</span>
+                <strong id="activeTaskCount" class="metric-value">0</strong>
+                <span class="metric-footnote">Seluruh antrean produksi</span>
+            </div>
+            <div class="metric-card troli">
+                <span class="metric-label">Antrean troli</span>
+                <strong id="trolleyTaskCount" class="metric-value">0</strong>
+                <span class="metric-footnote">Troli besar dan pallet kayu</span>
+            </div>
+            <div class="metric-card fg">
+                <span class="metric-label">FG menunggu QC</span>
+                <strong id="fgTaskCount" class="metric-value">0</strong>
+                <span class="metric-footnote">Perlu perhatian tim QC</span>
+            </div>
+        </div>
+        <div class="section-heading task-section-heading">
+            <h3>Active Tasks</h3>
+            <span class="section-kicker">LIVE PRODUCTION QUEUE</span>
+        </div>
         <div id="active-tasks" class="grid-shortcut"></div>
     </div>
 
@@ -440,6 +897,8 @@
     <div id="qcNotifPopup" style="display:none; position:fixed; right:24px; bottom:24px; background:linear-gradient(180deg, rgba(29, 78, 75, 0.95), rgba(15, 23, 42, 0.98)); border:1px solid rgba(16, 185, 129, 0.35); padding:18px; border-radius:12px; z-index:2000; width:340px; box-shadow: 0 12px 30px rgba(0,0,0,0.3);">
         <div style="font-weight:900; font-size:16px; margin-bottom:8px; color:#ecfccb;">Notifikasi FG Full Masuk</div>
         <div id="qcNotifText" style="color:#cbd5e1; margin-bottom:12px;">FG Full menunggu QC Release.</div>
+        <div style="color:#94a3b8; font-size:11px; line-height:1.5; margin-bottom:12px;">Aktifkan alarm dan izinkan notifikasi browser agar tetap mendapat Web Push saat halaman DHS ditutup. Pengingat diulang tiap 10 menit sampai QC Release.</div>
+        <button onclick="showSection('qc-panel')" style="background:#10b981; color:white; border:0; border-radius:9px; padding:9px 12px; font-weight:800; cursor:pointer;">Buka QC Release</button>
     </div>
 
     <div id="qc-panel" class="section">
@@ -452,8 +911,11 @@
         <div id="qc-active-tasks" class="grid-shortcut"></div>
     </div>
 
-    <div id="history" class="section active">
-        <h3 style="margin-top:0;">History Log & Rekam Jejak Produksi</h3>
+    <div id="history" class="section">
+        <div class="section-heading">
+            <h3>History Log & Rekam Jejak Produksi</h3>
+            <span id="historyStorageStatus" class="section-kicker">Memeriksa Google Sheets...</span>
+        </div>
         <div class="table-wrapper">
             <table>
                 <thead>
@@ -468,7 +930,7 @@
                 </thead>
                 <tbody id="historyTableBody">
                     <tr>
-                        <td colspan="6" class="empty-history">Belum ada riwayat aktivitas hari ini.</td>
+                        <td colspan="6" class="empty-history">Belum ada riwayat aktivitas.</td>
                     </tr>
                 </tbody>
             </table>
@@ -478,10 +940,30 @@
 
 <script>
     const API_BASE = DATA_CENTER_API_BASE;
-    const socket = io(API_BASE);
+    let sessionUser = null;
+    try {
+        sessionUser = JSON.parse(localStorage.getItem('dhs_user') || 'null');
+    } catch (error) {
+        console.error('Data sesi login tidak valid:', error);
+        localStorage.removeItem('dhs_user');
+    }
+    if (!sessionUser || sessionUser.role !== 'ADMIN') {
+        window.location.replace('login.html');
+    }
+
+    const socket = typeof io === 'function' ? io(API_BASE, {
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 10000,
+        timeout: 20000
+    }) : null;
     let lokalHistory = [];
     const activeTaskMap = new Map();
     let statusTimeout = null;
+    let hasConnectedSocket = false;
+    let syncInProgress = false;
+    let lastSyncErrorAt = 0;
 
     function showStatusMessage(text, type = 'info') {
         const el = document.getElementById('statusMessage');
@@ -501,6 +983,129 @@
     function tutupSidebar() {
         document.getElementById('sidebarDrawer').classList.remove('open');
         document.getElementById('sidebarOverlay').classList.remove('show');
+    }
+
+    function logoutSistem() {
+        if (socket) socket.disconnect();
+        localStorage.clear();
+        window.location.href = 'login.html';
+    }
+
+    function updateLiveClock() {
+        const now = new Date();
+        document.getElementById('liveClockTime').innerText = now.toLocaleTimeString('id-ID', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        });
+        document.getElementById('liveClockDate').innerText = now.toLocaleDateString('id-ID', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    }
+
+    function getRequestTimestamp(task) {
+        const epoch = Number(task.waktuEpoch);
+        if (Number.isFinite(epoch) && epoch > 0) return epoch;
+
+        const match = String(task.waktu || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2})[.:](\d{2})(?:[.:](\d{2}))?/);
+        if (!match) return null;
+
+        const [, day, month, year, hour, minute, second = '0'] = match;
+        const timestamp = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            Number(hour),
+            Number(minute),
+            Number(second)
+        ).getTime();
+        return Number.isFinite(timestamp) ? timestamp : null;
+    }
+
+    function formatElapsedTime(requestTimestamp) {
+        if (!requestTimestamp) return 'Waktu tidak tersedia';
+        const elapsedSeconds = Math.max(0, Math.floor((Date.now() - requestTimestamp) / 1000));
+        const days = Math.floor(elapsedSeconds / 86400);
+        const hours = Math.floor((elapsedSeconds % 86400) / 3600);
+        const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+        const seconds = elapsedSeconds % 60;
+        const prefix = days ? `${days}d ` : '';
+        const hourPart = hours || days ? `${String(hours).padStart(2, '0')}:` : '';
+        return `${prefix}${hourPart}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    function updateElapsedTimers() {
+        document.querySelectorAll('.task-elapsed[data-request-epoch]').forEach(timer => {
+            timer.innerText = formatElapsedTime(Number(timer.dataset.requestEpoch));
+        });
+    }
+
+    function updateTaskMetrics() {
+        const tasks = [...activeTaskMap.values()];
+        document.getElementById('activeTaskCount').innerText = tasks.length;
+        document.getElementById('trolleyTaskCount').innerText = tasks.filter(task => task.jenisMedia !== 'FG_FULL').length;
+        document.getElementById('fgTaskCount').innerText = tasks.filter(task =>
+            task.jenisMedia === 'FG_FULL' && ['WAIT_QC', 'WAITING', 'WAIT_KFG'].includes(task.status)
+        ).length;
+    }
+
+    function setConnectionStatus(connected, label) {
+        const badge = document.getElementById('connectionStatus');
+        badge.classList.toggle('connected', connected);
+        badge.classList.toggle('disconnected', !connected);
+        document.getElementById('connectionStatusText').innerText = label;
+        const footerLiveText = document.getElementById('footerLiveText');
+        const footerStatus = document.querySelector('.footer-status');
+        const footerDot = document.querySelector('.footer-status .pulse-dot');
+        if (footerLiveText) footerLiveText.innerText = connected ? 'Live • Terhubung ke server' : 'Mode pemulihan • Sinkronisasi berkala';
+        if (footerStatus) footerStatus.style.color = connected ? '#86efac' : '#fbbf24';
+        if (footerDot) footerDot.style.background = connected ? '#34d399' : '#f59e0b';
+    }
+
+    async function syncFromServer() {
+        if (syncInProgress) return;
+        syncInProgress = true;
+        try {
+            const [statusResponse, historyResponse] = await Promise.all([
+                fetch(`${API_BASE}/api/request/status`),
+                fetch(`${API_BASE}/api/history`)
+            ]);
+            if (!statusResponse.ok || !historyResponse.ok) {
+                throw new Error(`Server returned ${statusResponse.status}/${historyResponse.status}`);
+            }
+
+            const statusData = await statusResponse.json();
+            const historyData = await historyResponse.json();
+            if (!statusData.success || !historyData.success) {
+                throw new Error('Server returned an unsuccessful synchronization response');
+            }
+            updateActiveTasks(statusData.data || { troli: [], fg: [] });
+            renderTable(historyData.data || []);
+            const historyStorageStatus = document.getElementById('historyStorageStatus');
+            const sheetsConnected = historyData.googleSheets === 'connected';
+            historyStorageStatus.innerText = sheetsConnected
+                ? 'GOOGLE SHEETS • TERSINKRON'
+                : 'SHEETS BELUM TERSINKRON • RIWAYAT SERVER';
+            historyStorageStatus.classList.toggle('sync-ok', sheetsConnected);
+            historyStorageStatus.classList.toggle('sync-error', !sheetsConnected);
+            if (!sheetsConnected && historyData.data.length === 0) {
+                showStatusMessage('History Google Sheets belum dapat dimuat. Periksa endpoint GET Apps Script.', 'error');
+            }
+            lastSyncErrorAt = 0;
+        } catch (error) {
+            console.error('Gagal sinkronisasi data center:', error);
+            const now = Date.now();
+            if (now - lastSyncErrorAt > 30000) {
+                showStatusMessage('Data belum tersinkron. Sistem akan mencoba kembali otomatis.', 'error');
+                lastSyncErrorAt = now;
+            }
+        } finally {
+            syncInProgress = false;
+        }
     }
 
     function showSection(id) {
@@ -615,7 +1220,7 @@
     }
 
     function renderEmptyActiveTasks() {
-        const emptyHtml = `<div class="empty-history" style="padding: 30px;">Tidak ada tugas aktif saat ini.</div>`;
+        const emptyHtml = `<div class="empty-state"><span class="empty-state-icon">✓</span><div><div class="empty-state-title">Semua antrean sedang kosong</div><div class="empty-state-copy">Permintaan baru akan muncul otomatis di sini.</div></div></div>`;
         document.getElementById('active-tasks').innerHTML = emptyHtml;
         document.getElementById('qc-active-tasks').innerHTML = emptyHtml;
     }
@@ -624,6 +1229,7 @@
         const card = document.createElement('div');
         card.id = `${prefix}task-${data.id}`;
         card.className = 'card-progress';
+        const requestTimestamp = getRequestTimestamp(data);
         
         let actionButtonHtml = '';
         if (data.jenisMedia === 'FG_FULL' && (data.status === 'WAITING' || data.status === 'WAIT_QC')) {
@@ -633,26 +1239,32 @@
         }
 
         card.innerHTML = `
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <div class="task-card-top">
                 <div>
                     <div style="font-size:16px; font-weight:700;">${data.line}</div>
-                    <div style="font-size:12px; color:#94a3b8;">Lantai ${data.lantai || '-'} • ${getMediaText(data.jenisMedia)}</div>
+                    <div class="task-location">Lantai ${data.lantai || '-'} • ${getMediaText(data.jenisMedia)}</div>
                 </div>
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                     <span class="status-pill ${getStatusClass(data.status)}">${data.status}</span>
-                    ${actionButtonHtml}
                 </div>
-            </div>`;
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:auto;">
+                <div class="task-elapsed-label">Durasi sejak request</div>
+                <span class="task-elapsed" ${requestTimestamp ? `data-request-epoch="${requestTimestamp}"` : ''}>${formatElapsedTime(requestTimestamp)}</span>
+            </div>
+            <div style="display:flex; justify-content:flex-end; margin-top:4px;">${actionButtonHtml}</div>`;
         return card;
     }
 
     function upsertTaskCard(data) {
         activeTaskMap.set(data.id, data);
+        updateTaskMetrics();
 
         const existingCard = document.getElementById(`task-${data.id}`);
         const cardHtml = createTaskCardElement(data);
         const activeContainer = document.getElementById('active-tasks');
         const qcContainer = document.getElementById('qc-active-tasks');
+        activeContainer.querySelector('.empty-state')?.remove();
 
         if (existingCard) {
             existingCard.replaceWith(cardHtml);
@@ -662,6 +1274,7 @@
 
         const isQcVisibleStatus = ['WAIT_QC', 'WAITING', 'WAIT_KFG'].includes(data.status);
         if (isQcVisibleStatus && data.jenisMedia === 'FG_FULL') {
+            qcContainer.querySelector('.empty-state')?.remove();
             const existingQcCard = document.getElementById(`qc-task-${data.id}`);
             const qcCardHtml = createTaskCardElement(data, 'qc-');
             if (existingQcCard) {
@@ -681,6 +1294,7 @@
         const qcEl = document.getElementById(`qc-task-${id}`);
         if (el) el.remove();
         if (qcEl) qcEl.remove();
+        updateTaskMetrics();
         if (activeTaskMap.size === 0) renderEmptyActiveTasks();
     }
 
@@ -693,8 +1307,11 @@
         qcContainer.innerHTML = '';
         const items = [...(data.troli || []), ...(data.fg || [])];
 
+        syncQcNotifications(items);
+
         if (!items || items.length === 0) {
             renderEmptyActiveTasks();
+            updateTaskMetrics();
             countLabel.innerText = '0 tugas WAIT_KFG';
             return;
         }
@@ -706,7 +1323,7 @@
         countLabel.innerText = `${waitingCount} tugas WAIT_KFG`;
 
         if (qcTasks.length === 0) {
-            qcContainer.innerHTML = `<div class="empty-history" style="padding: 30px;">Tidak ada tugas WAIT_KFG saat ini.</div>`;
+            qcContainer.innerHTML = `<div class="empty-state"><span class="empty-state-icon">✓</span><div><div class="empty-state-title">Tidak ada antrean QC</div><div class="empty-state-copy">Tugas FG yang menunggu QC akan muncul di sini.</div></div></div>`;
         } else {
             qcTasks.forEach(item => {
                 const existingQcCard = document.getElementById(`qc-task-${item.id}`);
@@ -752,11 +1369,11 @@
         tbody.innerHTML = '';
 
         if (!historyData || historyData.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="empty-history">Belum ada riwayat aktivitas hari ini.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="empty-history">Belum ada riwayat aktivitas.</td></tr>`;
             return;
         }
 
-        historyData.forEach(item => {
+        [...historyData].reverse().forEach(item => {
             const tr = document.createElement('tr');
             let waktuMinta = item.waktu || '-';
             let waktuRelease = item.waktuRelease && item.waktuRelease !== '-' ? item.waktuRelease : '-';
@@ -774,58 +1391,64 @@
         });
     }
 
-    socket.on('connect', () => { console.log('Socket connected ke DHS server'); });
-    socket.on('connect_error', (error) => { console.warn('Socket connection error:', error); });
+    if (socket) {
+        socket.on('connect', () => {
+            setConnectionStatus(true, 'Real-time terhubung');
+            if (hasConnectedSocket) {
+                showStatusMessage('Koneksi pulih. Data sedang disinkronkan.', 'success');
+                syncFromServer();
+            }
+            hasConnectedSocket = true;
+        });
+        socket.on('connect_error', (error) => {
+            console.warn('Socket connection error:', error);
+            setConnectionStatus(false, 'Mencoba menyambungkan...');
+        });
+        socket.on('DATA_ANTREAN_UPDATE', data => {
+            updateActiveTasks(data);
+        });
 
-    const qcNotifShownIds = new Set();
+        socket.on('FORCE_RESET_SCREEN', () => {
+            window.location.reload();
+        });
 
-    socket.on('DATA_ANTREAN_UPDATE', data => {
-        updateActiveTasks(data);
-        const fgItems = [...(data.fg || [])];
-        fgItems.forEach(item => {
-            if (item && item.jenisMedia === 'FG_FULL' && ['WAIT_QC','WAITING','WAIT_KFG'].includes(item.status)) {
-                if (!qcNotifShownIds.has(item.id)) {
-                    qcNotifShownIds.add(item.id);
-                    showQcNotif(`${item.line} menunggu QC Release`, item.id);
-                }
+        socket.on('ANTREAN_BARU_MASUK', data => {
+            upsertTaskCard(data);
+            showStatusMessage(`Task baru diterima: ${data.line} (${data.status})`, 'info');
+        });
+
+        socket.on('ANTREAN_SELESAI_SYNC', id => {
+            removeTaskCard(id);
+            showStatusMessage(`Task ${id} telah selesai oleh KFG`, 'success');
+        });
+
+        socket.on('HISTORY_UPDATE', renderTable);
+        socket.on('KFG_SELESAI_ACK', ack => {
+            if (ack && ack.success) {
+                showStatusMessage(`KFG selesai untuk ID ${ack.id}`, 'success');
+            } else {
+                showStatusMessage(`Gagal menyelesaikan task ${ack?.id || ''}`, 'error');
             }
         });
-    });
 
-    socket.on('FORCE_RESET_SCREEN', () => {
-        window.location.reload();
-    });
-
-    socket.on('ANTREAN_BARU_MASUK', data => {
-        upsertTaskCard(data);
-        showStatusMessage(`Task baru diterima: ${data.line} (${data.status})`, 'info');
-        try {
-            if (data && data.jenisMedia === 'FG_FULL' && (data.status === 'WAIT_QC' || data.status === 'WAITING' || data.status === 'WAIT_KFG')) {
-                if (!qcNotifShownIds.has(data.id)) {
-                    qcNotifShownIds.add(data.id);
-                    showQcNotif(`${data.line} menunggu QC Release`, data.id);
-                }
-            }
-        } catch (e) { console.error(e); }
-    });
-
-    socket.on('ANTREAN_SELESAI_SYNC', id => {
-        removeTaskCard(id);
-        showStatusMessage(`Task ${id} telah selesai oleh KFG`, 'success');
-    });
-
-    socket.on('HISTORY_UPDATE', renderTable);
-    socket.on('KFG_SELESAI_ACK', ack => {
-        if (ack && ack.success) {
-            showStatusMessage(`KFG selesai untuk ID ${ack.id}`, 'success');
-        } else {
-            showStatusMessage(`Gagal menyelesaikan task ${ack?.id || ''}`, 'error');
-        }
-    });
-
-    socket.on('disconnect', () => { showStatusMessage('Koneksi socket terputus.', 'error'); });
+        socket.on('disconnect', reason => {
+            setConnectionStatus(false, 'Koneksi terputus • mencoba ulang');
+            showStatusMessage('Koneksi socket terputus. Sinkronisasi cadangan tetap berjalan.', 'error');
+            if (reason === 'io server disconnect') socket.connect();
+        });
+    } else {
+        setConnectionStatus(false, 'Socket tidak tersedia • mode cadangan');
+    }
 
     renderEmptyActiveTasks();
+    updateLiveClock();
+    setInterval(updateLiveClock, 1000);
+    updateElapsedTimers();
+    setInterval(updateElapsedTimers, 1000);
+    syncFromServer();
+    setInterval(() => {
+        if (!socket || !socket.connected) syncFromServer();
+    }, 8000);
 
     function tarikDataExcel() {
         if (!lokalHistory || lokalHistory.length === 0) {
@@ -869,54 +1492,227 @@
         });
     }
 
-    let qcAlarmOsc = null, qcAlarmCtx = null;
-    function playQcAlarm() {
+    const QC_ALARM_REPEAT_DELAY = 2 * 60 * 1000;
+    const QC_ALARM_BURST_DURATION = 10000;
+    const pendingQcRequestIds = new Set();
+    let qcAlarmEnabled = false;
+    let qcAlarmCtx = null;
+    let qcAlarmOsc = null;
+    let qcAlarmGain = null;
+    let qcAlarmPulseTimer = null;
+    let qcAlarmBurstTimer = null;
+    let qcAlarmRepeatTimer = null;
+    let qcAlarmStarting = false;
+    let webPushNotificationsEnabled = localStorage.getItem('dhs_web_push_enabled') === 'true';
+    window.addEventListener('storage', event => {
+        if (event.key === 'dhs_web_push_enabled') {
+            webPushNotificationsEnabled = event.newValue === 'true';
+        }
+    });
+
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = atob(base64);
+        return Uint8Array.from(rawData, character => character.charCodeAt(0));
+    }
+
+    async function enableWebPushNotifications() {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+            return { enabled: false, message: 'Browser ini belum mendukung Web Push.' };
+        }
+        if (!window.isSecureContext) {
+            return { enabled: false, message: 'Web Push perlu HTTPS atau localhost. Buka DHS melalui Live Server / alamat HTTPS.' };
+        }
+
+        const keyResponse = await fetch(`${API_BASE}/api/push/public-key`);
+        const keyPayload = await keyResponse.json();
+        if (!keyResponse.ok || !keyPayload.success || !keyPayload.publicKey) {
+            throw new Error(keyPayload.message || 'Server belum dikonfigurasi untuk Web Push.');
+        }
+
+        let permission = Notification.permission;
+        if (permission === 'default') permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+            return { enabled: false, message: 'Izin notifikasi belum diberikan; Web Push belum aktif.' };
+        }
+
+        await navigator.serviceWorker.register(new URL('service-worker.js', window.location.href));
+        const registration = await navigator.serviceWorker.ready;
+        let subscription = await registration.pushManager.getSubscription();
+        if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(keyPayload.publicKey)
+            });
+        }
+
+        const subscribeResponse = await fetch(`${API_BASE}/api/push/subscribe`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ subscription: subscription.toJSON() })
+        });
+        const subscribePayload = await subscribeResponse.json();
+        if (!subscribeResponse.ok || !subscribePayload.success) {
+            throw new Error(subscribePayload.message || 'Subscription Web Push gagal disimpan.');
+        }
+
+        localStorage.setItem('dhs_web_push_enabled', 'true');
+        webPushNotificationsEnabled = true;
+        return { enabled: true, message: 'Web Push aktif; notifikasi dapat masuk saat halaman DHS ditutup.' };
+    }
+
+    async function enableAlarm() {
+        const button = document.getElementById('enableAlarmButton');
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        let audioEnabled = false;
+
         try {
-            if (qcAlarmOsc) return;
-            qcAlarmCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (AudioContextClass) {
+                if (!qcAlarmCtx || qcAlarmCtx.state === 'closed') qcAlarmCtx = new AudioContextClass();
+                await qcAlarmCtx.resume();
+                qcAlarmEnabled = true;
+                audioEnabled = true;
+            }
+        } catch (error) {
+            console.error('Gagal mengaktifkan alarm Data Center:', error);
+        }
+
+        let pushResult;
+        try {
+            pushResult = await enableWebPushNotifications();
+        } catch (error) {
+            console.error('Gagal mengaktifkan Web Push Data Center:', error);
+            pushResult = { enabled: false, message: error.message };
+        }
+
+        button.classList.toggle('enabled', audioEnabled || pushResult.enabled);
+        button.innerText = pushResult.enabled ? '🔔 Alarm & Push Aktif' : (audioEnabled ? '🔔 Alarm Aktif' : '🔔 Aktifkan Alarm');
+        const messages = [];
+        if (audioEnabled) messages.push('Alarm suara aktif selama halaman DHS terbuka.');
+        else messages.push('Alarm suara tidak tersedia di browser ini.');
+        messages.push(pushResult.message);
+        showStatusMessage(messages.join(' '), pushResult.enabled || audioEnabled ? 'success' : 'error');
+
+        if (pendingQcRequestIds.size && audioEnabled) playQcAlarmBurst();
+    }
+
+    function stopQcAlarmBurst() {
+        if (qcAlarmPulseTimer) {
+            clearInterval(qcAlarmPulseTimer);
+            qcAlarmPulseTimer = null;
+        }
+        if (qcAlarmBurstTimer) {
+            clearTimeout(qcAlarmBurstTimer);
+            qcAlarmBurstTimer = null;
+        }
+        if (qcAlarmOsc) {
+            try { qcAlarmOsc.stop(); } catch (error) { console.warn('Alarm Data Center sudah berhenti:', error); }
+            qcAlarmOsc.disconnect();
+            qcAlarmOsc = null;
+        }
+        if (qcAlarmGain) {
+            qcAlarmGain.disconnect();
+            qcAlarmGain = null;
+        }
+        qcAlarmStarting = false;
+    }
+
+    function playQcAlarmBurst() {
+        if (!qcAlarmEnabled || !pendingQcRequestIds.size || qcAlarmOsc || qcAlarmStarting) return;
+        if (!qcAlarmCtx || qcAlarmCtx.state === 'closed') return;
+
+        qcAlarmStarting = true;
+        qcAlarmCtx.resume().then(() => {
+            qcAlarmStarting = false;
+            if (!qcAlarmEnabled || !pendingQcRequestIds.size || qcAlarmOsc) return;
+
             qcAlarmOsc = qcAlarmCtx.createOscillator();
-            const gain = qcAlarmCtx.createGain();
-            qcAlarmOsc.type = 'sine';
+            qcAlarmGain = qcAlarmCtx.createGain();
+            qcAlarmOsc.type = 'square';
             qcAlarmOsc.frequency.setValueAtTime(880, qcAlarmCtx.currentTime);
-            gain.gain.setValueAtTime(0.0001, qcAlarmCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.2, qcAlarmCtx.currentTime + 0.05);
-            qcAlarmOsc.connect(gain); gain.connect(qcAlarmCtx.destination);
+            qcAlarmOsc.connect(qcAlarmGain);
+            qcAlarmGain.connect(qcAlarmCtx.destination);
             qcAlarmOsc.start();
-            qcAlarmOsc._pulse = setInterval(() => {
-                gain.gain.cancelScheduledValues(qcAlarmCtx.currentTime);
-                gain.gain.setValueAtTime(0.0001, qcAlarmCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.2, qcAlarmCtx.currentTime + 0.05);
-                setTimeout(() => { gain.gain.exponentialRampToValueAtTime(0.0001, qcAlarmCtx.currentTime + 0.6); }, 500);
-            }, 800);
-            qcAlarmOsc._autoStop = setTimeout(() => { stopQcAlarm(); }, 10000);
-        } catch (e) { console.error('QC Alarm error', e); }
+
+            const pulseAlarm = () => {
+                if (!qcAlarmGain || !qcAlarmCtx || qcAlarmCtx.state !== 'running') return;
+                const now = qcAlarmCtx.currentTime;
+                qcAlarmGain.gain.cancelScheduledValues(now);
+                qcAlarmGain.gain.setValueAtTime(0.0001, now);
+                qcAlarmGain.gain.exponentialRampToValueAtTime(0.45, now + 0.04);
+                qcAlarmGain.gain.setValueAtTime(0.45, now + 0.42);
+                qcAlarmGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+            };
+
+            pulseAlarm();
+            qcAlarmPulseTimer = setInterval(pulseAlarm, 700);
+            qcAlarmBurstTimer = setTimeout(stopQcAlarmBurst, QC_ALARM_BURST_DURATION);
+        }).catch(error => {
+            qcAlarmStarting = false;
+            console.error('Gagal memutar alarm QC:', error);
+        });
+    }
+
+    function startQcAlarmRepeat() {
+        if (qcAlarmRepeatTimer) return;
+        qcAlarmRepeatTimer = setInterval(playQcAlarmBurst, QC_ALARM_REPEAT_DELAY);
     }
 
     function stopQcAlarm() {
-        try {
-            if (!qcAlarmOsc) return;
-            clearInterval(qcAlarmOsc._pulse);
-            if (qcAlarmOsc._autoStop) { clearTimeout(qcAlarmOsc._autoStop); qcAlarmOsc._autoStop = null; }
-            qcAlarmOsc.stop(); qcAlarmOsc.disconnect(); qcAlarmOsc = null;
-            if (qcAlarmCtx && typeof qcAlarmCtx.close === 'function') qcAlarmCtx.close(); qcAlarmCtx = null;
-        } catch(_){}
+        if (qcAlarmRepeatTimer) {
+            clearInterval(qcAlarmRepeatTimer);
+            qcAlarmRepeatTimer = null;
+        }
+        stopQcAlarmBurst();
+        if (qcAlarmCtx && qcAlarmCtx.state === 'running') {
+            qcAlarmCtx.suspend().catch(error => console.warn('Gagal menjeda alarm QC:', error));
+        }
     }
 
-    let qcPopupAutoTimer = null;
-    function showQcNotif(message, requestId) {
+    function sendQcDesktopNotification(task) {
+        if (webPushNotificationsEnabled || document.visibilityState !== 'hidden' ||
+            !('Notification' in window) || Notification.permission !== 'granted') return;
+        try {
+            new Notification('FG Full menunggu QC Release', {
+                body: `${task.line} • Lantai ${task.lantai || '-'}`,
+                tag: `dhs-qc-${task.id}`,
+                renotify: false
+            });
+        } catch (error) {
+            console.warn('Notifikasi desktop QC tidak dapat ditampilkan:', error);
+        }
+    }
+
+    function syncQcNotifications(tasks) {
+        const waitingTasks = tasks.filter(task =>
+            task.jenisMedia === 'FG_FULL' && ['WAIT_QC', 'WAITING', 'WAIT_KFG'].includes(task.status)
+        );
+        const waitingIds = new Set(waitingTasks.map(task => task.id));
+        const newlyWaitingTasks = waitingTasks.filter(task => !pendingQcRequestIds.has(task.id));
+
+        pendingQcRequestIds.forEach(id => {
+            if (!waitingIds.has(id)) pendingQcRequestIds.delete(id);
+        });
+        waitingTasks.forEach(task => pendingQcRequestIds.add(task.id));
+
         const popup = document.getElementById('qcNotifPopup');
         const txt = document.getElementById('qcNotifText');
-        if(!popup || !txt) return;
-        txt.innerText = message || 'FG Full menunggu QC Release.';
-        popup.style.display = 'block';
-        playQcAlarm();
-
-        if (qcPopupAutoTimer) clearTimeout(qcPopupAutoTimer);
-        qcPopupAutoTimer = setTimeout(() => {
+        if (pendingQcRequestIds.size === 0) {
             popup.style.display = 'none';
             stopQcAlarm();
-            qcPopupAutoTimer = null;
-        }, 10000);
+            return;
+        }
+
+        txt.innerText = waitingTasks.length === 1
+            ? `${waitingTasks[0].line} menunggu QC Release.`
+            : `${waitingTasks.length} tugas FG Full menunggu QC Release.`;
+        popup.style.display = 'block';
+        if (newlyWaitingTasks.length) {
+            newlyWaitingTasks.forEach(sendQcDesktopNotification);
+            playQcAlarmBurst();
+        }
+        startQcAlarmRepeat();
     }
 </script>
 

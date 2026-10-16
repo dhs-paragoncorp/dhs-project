@@ -164,9 +164,10 @@
 <div id="notifPopup" style="display:none; position:fixed; left:50%; top:20%; transform:translateX(-50%); background:rgba(255,255,255,0.98); border:2px solid #0f172a; padding:18px; border-radius:12px; z-index:2000; box-shadow:0 8px 30px rgba(0,0,0,0.3); width:320px; text-align:center;">
     <div style="font-weight:900; font-size:18px; margin-bottom:6px;">Troli Sudah Di Lift!</div>
     <div id="notifPopupText" style="color:#334155; margin-bottom:12px;">Silakan terima fisik di lift.</div>
+    <div id="notifAudioStatus" style="color:#64748b; font-size:11px; font-weight:700; margin-bottom:10px;">Alarm akan berulang tiap 2 menit sampai dikonfirmasi.</div>
     <div style="display:flex; gap:8px; justify-content:center;">
         <button id="notifAcknow" style="background:#10b981;color:#fff;border:none;padding:8px 12px;border-radius:8px;font-weight:800;">Terima</button>
-        <button id="notifSnooze" style="background:#f59e0b;color:#fff;border:none;padding:8px 12px;border-radius:8px;font-weight:800;">Tunda</button>
+        <button id="notifSnooze" style="background:#f59e0b;color:#fff;border:none;padding:8px 12px;border-radius:8px;font-weight:800;">Tunda 2 menit</button>
     </div>
 </div>
 
@@ -251,13 +252,24 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: id })
         })
-        .then(res => res.json())
-        .then(resData => {
-            if(resData.success) {
-                tambahKeRiwayatLokal({ jenisMedia: textLabel.toUpperCase().replace(' ', '_') });
-                try { localStorage.removeItem(`dhs_pending_${sessionUser.username}`); stopAlarm(); closeNotifPopup(); } catch(_){}
+        .then(async response => {
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Konfirmasi penerimaan gagal.');
             }
-        }).catch(() => {});
+
+            tambahKeRiwayatLokal({ jenisMedia: textLabel.toUpperCase().replace(' ', '_') });
+            const pendingKey = `dhs_pending_${sessionUser.username}`;
+            const pending = JSON.parse(localStorage.getItem(pendingKey) || 'null');
+            if (!pending || !pending.requestId || pending.requestId === id) {
+                localStorage.removeItem(pendingKey);
+            }
+            if (activeAlarmRequestId === id) closeNotifPopup();
+        })
+        .catch(error => {
+            console.error('Gagal mengonfirmasi penerimaan fisik:', error);
+            alert(error.message || 'Gagal terhubung ke backend untuk konfirmasi penerimaan.');
+        });
     }
 
     function getMediaLabel(jenis) {
@@ -285,7 +297,50 @@
         });
     }
 
-    setInterval(() => { fetch(`${API_BASE}/api/request/status`, { method: 'GET' }).catch(() => {}); }, 5000);
+    function checkForDeliveredTrolley(data) {
+        try {
+            const pendingRaw = localStorage.getItem(`dhs_pending_${sessionUser.username}`);
+            if (!pendingRaw) return;
+            const pending = JSON.parse(pendingRaw);
+            if (pending.jenisMedia !== 'TROLI_BESAR' && pending.jenisMedia !== 'TROLI_KECIL') return;
+
+            const activeItems = [...(data.troli || []), ...(data.fg || [])];
+            const matched = activeItems.find(item =>
+                item.line === pending.line &&
+                String(item.lantai) === String(pending.lantai) &&
+                item.jenisMedia === pending.jenisMedia &&
+                item.status === 'DELIVERED'
+            );
+            if (!matched) return;
+
+            pending.requestId = matched.id;
+            localStorage.setItem(`dhs_pending_${sessionUser.username}`, JSON.stringify(pending));
+            showNotifPopup(
+                `${getMediaLabel(matched.jenisMedia).text} sudah di lift. Terima fisik sekarang.`,
+                matched.id,
+                matched.jenisMedia
+            );
+        } catch (error) {
+            console.error('Gagal memeriksa konfirmasi troli:', error);
+        }
+    }
+
+    async function refreshOperatorQueue() {
+        try {
+            const response = await fetch(`${API_BASE}/api/request/status`);
+            if (!response.ok) throw new Error(`Status server ${response.status}`);
+            const result = await response.json();
+            if (!result.success || !result.data) throw new Error('Data antrean tidak valid');
+            checkForDeliveredTrolley(result.data);
+        } catch (error) {
+            console.warn('Gagal memeriksa status troli:', error);
+        }
+    }
+
+    setInterval(refreshOperatorQueue, 5000);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') refreshOperatorQueue();
+    });
 
     const scriptIo = document.createElement('script');
     scriptIo.src = `${API_BASE}/socket.io/socket.io.js`;
@@ -345,25 +400,7 @@
             });
         });
 
-        socket.on('DATA_ANTREAN_UPDATE', (data) => {
-            try {
-                const pendingRaw = localStorage.getItem(`dhs_pending_${sessionUser.username}`);
-                if(!pendingRaw) return;
-                const pending = JSON.parse(pendingRaw);
-                const gabung = [...data.troli, ...data.fg];
-                const matched = gabung.find(it => it.line === pending.line && it.lantai === pending.lantai && it.jenisMedia === pending.jenisMedia && it.status === 'DELIVERED');
-                if(matched) {
-                    const isFgFull = matched.jenisMedia === 'FG_FULL';
-                    showNotifPopup(
-                        isFgFull
-                            ? `${getMediaLabel(matched.jenisMedia).text} sudah di lift.`
-                            : `${getMediaLabel(matched.jenisMedia).text} sudah di lift. Terima fisik sekarang.`,
-                        matched.id,
-                        matched.jenisMedia
-                    );
-                }
-            } catch (e) { console.error(e); }
-        });
+        socket.on('DATA_ANTREAN_UPDATE', checkForDeliveredTrolley);
         
         socket.on('FORCE_RESET_SCREEN', () => {
             // Berikan sedikit jeda atau langsung reload halaman agar browser memperbarui script terbaru
@@ -379,39 +416,122 @@
     document.head.appendChild(scriptIo);
     renderRiwayatLokal();
     
-    let alarmOsc = null, alarmCtx = null;
-    function playAlarm() {
-        try {
-            if(alarmOsc) return;
-            alarmCtx = new (window.AudioContext || window.webkitAudioContext)();
-            alarmOsc = alarmCtx.createOscillator();
-            const gain = alarmCtx.createGain();
-            alarmOsc.type = 'sine';
-            alarmOsc.frequency.setValueAtTime(880, alarmCtx.currentTime);
-            gain.gain.setValueAtTime(0.0001, alarmCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.2, alarmCtx.currentTime + 0.05);
-            alarmOsc.connect(gain); gain.connect(alarmCtx.destination);
-            alarmOsc.start();
-            alarmOsc._pulse = setInterval(() => {
-                gain.gain.cancelScheduledValues(alarmCtx.currentTime);
-                gain.gain.setValueAtTime(0.0001, alarmCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.2, alarmCtx.currentTime + 0.05);
-                setTimeout(() => { gain.gain.exponentialRampToValueAtTime(0.0001, alarmCtx.currentTime + 0.6); }, 500);
-            }, 800);
-            alarmOsc._autoStop = setTimeout(() => { stopAlarm(); }, 10000);
-        } catch (e) { console.error('Alarm error', e); }
+    const ALARM_REPEAT_DELAY = 2 * 60 * 1000;
+    const ALARM_BURST_DURATION = 10000;
+    let alarmOsc = null;
+    let alarmGain = null;
+    let alarmCtx = null;
+    let alarmPulseTimer = null;
+    let alarmBurstStopTimer = null;
+    let alarmRepeatTimer = null;
+    let alarmBurstStarting = false;
+    let activeAlarmRequestId = null;
+
+    function unlockAlarmAudio() {
+        if (!alarmCtx) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) {
+                document.getElementById('notifAudioStatus').innerText = 'Browser ini tidak mendukung alarm audio.';
+                return;
+            }
+            alarmCtx = new AudioContextClass();
+        }
+        if (alarmCtx.state === 'suspended') {
+            alarmCtx.resume()
+                .then(() => {
+                    if (activeAlarmRequestId && !alarmOsc) playAlarmBurst();
+                })
+                .catch(error => console.warn('Browser belum mengizinkan audio alarm:', error));
+        }
     }
-    function stopAlarm() {
-        try {
-            if(!alarmOsc) return;
-            clearInterval(alarmOsc._pulse);
-            if(alarmOsc._autoStop) { clearTimeout(alarmOsc._autoStop); alarmOsc._autoStop = null; }
-            alarmOsc.stop();
+
+    window.addEventListener('pointerdown', unlockAlarmAudio);
+    window.addEventListener('keydown', unlockAlarmAudio);
+
+    function stopAlarmBurst() {
+        if (alarmPulseTimer) {
+            clearInterval(alarmPulseTimer);
+            alarmPulseTimer = null;
+        }
+        if (alarmBurstStopTimer) {
+            clearTimeout(alarmBurstStopTimer);
+            alarmBurstStopTimer = null;
+        }
+        if (alarmOsc) {
+            try { alarmOsc.stop(); } catch (error) { console.warn('Alarm oscillator sudah berhenti:', error); }
             alarmOsc.disconnect();
             alarmOsc = null;
-            if(alarmCtx && typeof alarmCtx.close === 'function') alarmCtx.close();
-            alarmCtx = null;
-        } catch(_){}
+        }
+        if (alarmGain) {
+            alarmGain.disconnect();
+            alarmGain = null;
+        }
+        alarmBurstStarting = false;
+    }
+
+    function playAlarmBurst() {
+        if (!activeAlarmRequestId || alarmOsc || alarmBurstStarting) return;
+        if (!alarmCtx) unlockAlarmAudio();
+        if (!alarmCtx) return;
+
+        alarmBurstStarting = true;
+        alarmCtx.resume().then(() => {
+            alarmBurstStarting = false;
+            if (!activeAlarmRequestId || alarmOsc) return;
+
+            alarmOsc = alarmCtx.createOscillator();
+            alarmGain = alarmCtx.createGain();
+            alarmOsc.type = 'square';
+            alarmOsc.frequency.setValueAtTime(880, alarmCtx.currentTime);
+            alarmGain.gain.setValueAtTime(0.0001, alarmCtx.currentTime);
+            alarmOsc.connect(alarmGain);
+            alarmGain.connect(alarmCtx.destination);
+            alarmOsc.start();
+            document.getElementById('notifAudioStatus').innerText = 'Alarm aktif • akan berulang tiap 2 menit sampai dikonfirmasi.';
+
+            const pulseAlarm = () => {
+                if (!alarmGain || !alarmCtx || alarmCtx.state !== 'running') return;
+                const now = alarmCtx.currentTime;
+                alarmGain.gain.cancelScheduledValues(now);
+                alarmGain.gain.setValueAtTime(0.0001, now);
+                alarmGain.gain.exponentialRampToValueAtTime(0.85, now + 0.04);
+                alarmGain.gain.setValueAtTime(0.85, now + 0.42);
+                alarmGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+            };
+
+            pulseAlarm();
+            alarmPulseTimer = setInterval(pulseAlarm, 750);
+            alarmBurstStopTimer = setTimeout(stopAlarmBurst, ALARM_BURST_DURATION);
+        }).catch(error => {
+            alarmBurstStarting = false;
+            document.getElementById('notifAudioStatus').innerText = 'Klik halaman sekali untuk mengaktifkan suara alarm.';
+            console.warn('Gagal memulai audio alarm:', error);
+        });
+    }
+
+    function scheduleAlarmRepeat(delay = ALARM_REPEAT_DELAY) {
+        if (alarmRepeatTimer) {
+            clearTimeout(alarmRepeatTimer);
+            alarmRepeatTimer = null;
+        }
+        alarmRepeatTimer = setTimeout(() => {
+            if (!activeAlarmRequestId) return;
+            playAlarmBurst();
+            alarmRepeatTimer = setInterval(playAlarmBurst, ALARM_REPEAT_DELAY);
+        }, delay);
+    }
+
+    function stopAlarm() {
+        if (alarmRepeatTimer) {
+            clearTimeout(alarmRepeatTimer);
+            clearInterval(alarmRepeatTimer);
+            alarmRepeatTimer = null;
+        }
+        activeAlarmRequestId = null;
+        stopAlarmBurst();
+        if (alarmCtx && alarmCtx.state === 'running') {
+            alarmCtx.suspend().catch(error => console.warn('Gagal menjeda audio alarm:', error));
+        }
     }
 
     function showNotifPopup(message, requestId, jenisMedia = null) {
@@ -425,15 +545,18 @@
         btnAcknow.style.display = isFgFull ? 'none' : 'inline-block';
         btnSnooze.style.display = 'inline-block';
         popup.style.display = 'block';
-        playAlarm();
+        if (activeAlarmRequestId !== requestId) {
+            stopAlarm();
+            activeAlarmRequestId = requestId;
+            playAlarmBurst();
+            scheduleAlarmRepeat();
+        }
         btnAcknow.onclick = () => {
             if(requestId) window.eksekusiTerimaFisik(requestId, 'Troli');
-            closeNotifPopup();
-            try { localStorage.removeItem(`dhs_pending_${sessionUser.username}`); } catch(_){ }
         };
         btnSnooze.onclick = () => {
-            stopAlarm();
-            setTimeout(() => { playAlarm(); }, 10000);
+            stopAlarmBurst();
+            scheduleAlarmRepeat();
         };
     }
 

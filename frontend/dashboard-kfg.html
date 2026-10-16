@@ -553,7 +553,7 @@
     function logoutSistem() { localStorage.clear(); window.location.href = 'login.html'; }
     function clearDataHantu() {
         tutupSidebar();
-        if(confirm("Reset total antrean di server?")) fetch(`${API_BASE}/api/request/reset-all`, { method: 'POST' });
+        if(confirm("Bersihkan semua antrean aktif? History tetap tersimpan dan tidak akan dihapus.")) fetch(`${API_BASE}/api/request/reset-all`, { method: 'POST' });
     }
 
     window.tutupPopupManual = function() { 
