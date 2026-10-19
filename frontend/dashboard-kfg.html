@@ -644,6 +644,7 @@
     function alarmMati() { if(alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; } if (alarmTimeout) { clearTimeout(alarmTimeout); alarmTimeout = null; } }
     
     function getMediaLabel(jenis) {
+        if(jenis === 'BB_TROLI_KOSONG') return { text: 'Troli BB Kosong', key: 'troli_besar', emoji: '📦' };
         if(jenis === 'TROLI_BESAR') return { text: 'Troli Besar', key: 'troli_besar', emoji: '📦' };
         if(jenis === 'TROLI_KECIL') return { text: 'Pallet Kayu', key: 'troli_kecil', emoji: '🛒' };
         return { text: 'Kirim FG Full', key: 'fg_full', emoji: '🚨' };
@@ -734,8 +735,8 @@
 
             container.innerHTML += `
                 <div class="vertical-hero-card">
-                    <div class="floor-tag-hero ${floorBgClass}">Lantai ${item.lantai}</div>
-                    <div class="line-title-hero">${item.line}</div>
+                    ${item.jenisMedia === 'BB_TROLI_KOSONG' ? '' : `<div class="floor-tag-hero ${floorBgClass}">Lantai ${item.lantai}</div>`}
+                    <div class="line-title-hero">${item.jenisMedia === 'BB_TROLI_KOSONG' ? 'PICKUP BB' : item.line}</div>
                     <div class="media-visual-box">${svgAssets[visual.key]}</div>
                     <div class="media-name-hero">${visual.text}</div>
                     <div class="timer-text-hero" id="timer-${item.id}">⏰ 00:00</div>

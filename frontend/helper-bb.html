@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DHS • Dashboard Helper BB</title>
+    <script>
+        const HELPER_BB_API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'http://localhost:3000'
+            : 'https://dhs-project.onrender.com';
+        document.write(`<script src="${HELPER_BB_API_BASE}/socket.io/socket.io.js"><\/script>`);
+    </script>
+    <style>
+        :root {
+            --bg-body: #f4f6f9;
+            --bg-card: #ffffff;
+            --border: #cbd5e1;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --accent: #2563eb;
+        }
+        [data-theme="dark"] {
+            --bg-body: #0b0f19;
+            --bg-card: #131c2e;
+            --border: #1e293b;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px 20px 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: .3s;
+        }
+        main { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 24px; }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 5px 15px;
+            border-bottom: 1px solid var(--border);
+        }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .menu-toggle-btn { padding: 0; border: 0; background: none; color: var(--text-main); font-size: 26px; cursor: pointer; }
+        h1 { margin: 0; color: var(--text-main); font-size: 28px; font-weight: 900; }
+        header p { margin: 3px 0 0; color: var(--text-sub); font-size: 13px; font-weight: 600; }
+        .status-area { text-align: right; }
+        .connection { color: #10b981; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .sidebar-drawer {
+            position: fixed; top: 0; left: -280px; z-index: 999; width: 260px; height: 100vh;
+            display: flex; flex-direction: column; padding: 30px 20px;
+            background: var(--bg-card); border-right: 1px solid var(--border);
+            box-shadow: 20px 0 50px rgba(0, 0, 0, .3); transition: .3s cubic-bezier(.4, 0, .2, 1);
+        }
+        .sidebar-drawer.open { left: 0; }
+        .sidebar-overlay {
+            position: fixed; inset: 0; z-index: 998; display: none;
+            background: rgba(0, 0, 0, .4); backdrop-filter: blur(4px);
+        }
+        .sidebar-overlay.show { display: block; }
+        .sidebar-header { margin: 15px 0 25px; color: var(--text-sub); font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+        .sidebar-menu-item {
+            width: 100%; margin-bottom: 12px; padding: 14px; display: flex; align-items: center; gap: 10px;
+            border: 1px solid var(--border); border-radius: 12px; background: var(--bg-card);
+            color: var(--text-main); font-size: 13px; font-weight: 700; text-align: left; cursor: pointer;
+        }
+        .request-panel, .status-box {
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: var(--bg-card);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, .05);
+        }
+        .request-panel { display: flex; flex-direction: column; gap: 18px; }
+        .section-title { margin: 0; font-size: 16px; font-weight: 800; text-align: center; }
+        .section-sub { margin: -12px 0 0; color: var(--text-sub); font-size: 13px; font-weight: 600; line-height: 1.5; text-align: center; }
+        .select-card {
+            width: 100%;
+            min-height: 190px;
+            padding: 24px 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            border: 2px solid rgba(217, 119, 6, .22);
+            border-radius: 16px;
+            background: var(--bg-card);
+            color: #d97706;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, .05);
+            cursor: pointer;
+            font: inherit;
+            font-weight: 800;
+            transition: .2s;
+        }
+        .select-card:hover:not(:disabled) { border-color: #d97706; background: rgba(217, 119, 6, .05); }
+        .select-card:disabled { cursor: wait; opacity: .7; }
+        .select-card svg { width: 54px; height: 54px; fill: currentColor; }
+        #statusMessage { min-height: 18px; color: var(--text-sub); font-size: 12px; font-weight: 700; text-align: center; }
+        #statusMessage.error { color: #ef4444; }
+        #statusMessage.success { color: #10b981; }
+        .status-title { margin: 0 0 12px; color: var(--text-sub); font-size: 14px; font-weight: 800; letter-spacing: .5px; text-align: center; text-transform: uppercase; }
+        #taskList { display: flex; flex-direction: column; }
+        .empty { padding: 15px 0; color: var(--text-sub); font-size: 13px; font-weight: 600; text-align: center; }
+        .task-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .task-card h3 { margin: 0 0 4px; font-size: 14px; }
+        .task-card p { margin: 0; color: var(--text-sub); font-size: 11px; }
+        .task-actions { display: flex; align-items: center; gap: 8px; }
+        .cancel {
+            padding: 7px 10px;
+            border: 0;
+            border-radius: 7px;
+            background: rgba(239, 68, 68, .1);
+            color: #ef4444;
+            font: inherit;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .waiting { color: #d97706; font-size: 10px; font-weight: 800; }
+        .factory-footer {
+            width: 100%;
+            margin-top: auto;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, .45);
+            padding: 12px 16px;
+        }
+        [data-theme="dark"] .factory-footer { background: rgba(15, 23, 42, .75); }
+        .footer-inner { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .footer-brand { display: flex; align-items: center; gap: 12px; }
+        .footer-logo { width: 40px; height: 40px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; background: linear-gradient(135deg, #10b981, #0f766e); color: white; font-size: 12px; font-weight: 900; }
+        .footer-title { color: var(--text-main); font-size: 15px; font-weight: 900; }
+        .footer-subtitle { margin-top: 3px; color: var(--text-sub); font-size: 11px; font-weight: 700; }
+        .footer-status { color: #0f766e; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        [data-theme="dark"] .footer-status { color: #86efac; }
+        @media (max-width: 480px) {
+            body { padding: 15px 15px 95px; }
+            h1 { font-size: 22px; }
+            .status-area { max-width: 110px; }
+            .section-sub { font-size: 12px; }
+            .select-card { min-height: 170px; }
+        }
+    </style>
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="tutupSidebar()"></div>
+<div class="sidebar-drawer" id="sidebarDrawer">
+    <div class="sidebar-header">DHS HELPER BB</div>
+    <button class="sidebar-menu-item" onclick="toggleTheme()">🌓 Ganti Tema</button>
+    <div style="flex-grow:1;"></div>
+    <button class="sidebar-menu-item" onclick="window.location.href='login.html'">🚪 Login DHS</button>
+    <button class="sidebar-menu-item" onclick="tutupSidebar()">Tutup Menu</button>
+</div>
+<main>
+    <header>
+        <div class="header-left">
+            <button class="menu-toggle-btn" onclick="bukaSidebar()" aria-label="Buka menu">☰</button>
+            <div>
+                <h1>DHS</h1>
+                <p>Digital Handling System</p>
+            </div>
+        </div>
+        <div class="status-area">
+            <div class="connection" id="connectionStatus">Menghubungkan</div>
+            <p>HELPER BB</p>
+        </div>
+    </header>
+    <section class="request-panel">
+        <h2 class="section-title">Panggil KFG</h2>
+        <p class="section-sub">Tekan tombol ini jika ada troli BB kosong yang perlu diambil KFG.</p>
+        <button class="select-card" id="createRequestButton" onclick="createRequest()">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 16c.55 0 1-.45 1-1V5c0-.55-.45-1-1-1H7c-.55 0-1 1-1 1v10c0 .55.45 1 1 1h12zM6 20c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
+            <span id="createButtonText">TROLI BB KOSONG<br>AMBIL KE KFG</span>
+        </button>
+        <div id="statusMessage" role="status" aria-live="polite"></div>
+    </section>
+    <section class="status-box">
+        <h2 class="status-title">Status Permintaan</h2>
+        <div id="taskList"><div class="empty">Mengambil antrean...</div></div>
+    </section>
+    <footer class="factory-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <span class="footer-logo">FQ</span>
+                <div><div class="footer-title">Factory Quality Semisolid</div><div class="footer-subtitle">@Part of ParagonCorp</div></div>
+            </div>
+            <span class="footer-status">● Digital Handling System</span>
+        </div>
+    </footer>
+</main>
+<script>
+    const socket = typeof io === 'function' ? io(HELPER_BB_API_BASE, {
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 10000
+    }) : null;
+    const taskList = document.getElementById('taskList');
+    const statusMessage = document.getElementById('statusMessage');
+    const createButton = document.getElementById('createRequestButton');
+
+    function bukaSidebar() {
+        document.getElementById('sidebarDrawer').classList.add('open');
+        document.getElementById('sidebarOverlay').classList.add('show');
+    }
+
+    function tutupSidebar() {
+        document.getElementById('sidebarDrawer').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('show');
+    }
+
+    function toggleTheme() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+        tutupSidebar();
+    }
+
+    function showMessage(message, type = '') {
+        statusMessage.textContent = message;
+        statusMessage.className = type;
+    }
+
+    async function postRequest(endpoint, body) {
+        const response = await fetch(`${HELPER_BB_API_BASE}${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || `Permintaan gagal (HTTP ${response.status}).`);
+        }
+        return result;
+    }
+
+    async function createRequest() {
+        if (createButton.disabled) return;
+        createButton.disabled = true;
+        try {
+            await postRequest('/api/request/bb-empty', { username: 'HELPER_BB' });
+            showMessage('KFG sudah dipanggil untuk mengambil troli BB kosong.', 'success');
+        } catch (error) {
+            showMessage(error.message, 'error');
+        } finally {
+            createButton.disabled = taskList.querySelector('[data-active-request="true"]') !== null;
+        }
+    }
+
+    async function cancelTask(id) {
+        if (!window.confirm('Batalkan permintaan troli BB kosong ini?')) return;
+        try {
+            await postRequest('/api/request/bb-empty/cancel', { id });
+            showMessage('Permintaan troli BB kosong berhasil dibatalkan.', 'success');
+        } catch (error) {
+            showMessage(error.message, 'error');
+        }
+    }
+
+    function renderTasks(data) {
+        const tasks = (data.troli || [])
+            .filter(task => task.jenisMedia === 'BB_TROLI_KOSONG')
+            .sort((a, b) => (a.waktuEpoch || 0) - (b.waktuEpoch || 0));
+        taskList.replaceChildren();
+        if (!tasks.length) {
+            const empty = document.createElement('div');
+            empty.className = 'empty';
+            empty.textContent = 'Belum ada permintaan pickup troli BB kosong.';
+            taskList.appendChild(empty);
+            createButton.disabled = false;
+            document.getElementById('createButtonText').innerHTML = 'TROLI BB KOSONG<br>AMBIL KE KFG';
+            return;
+        }
+
+        tasks.forEach(task => {
+            const card = document.createElement('article');
+            card.className = 'task-card';
+            card.dataset.activeRequest = 'true';
+            const details = document.createElement('div');
+            const title = document.createElement('h3');
+            title.textContent = 'Menunggu KFG mengambil troli BB kosong';
+            const description = document.createElement('p');
+            description.textContent = `Dipanggil ${task.waktu || '-'}`;
+            details.append(title, description);
+            const actions = document.createElement('div');
+            actions.className = 'task-actions';
+
+            const cancelButton = document.createElement('button');
+            cancelButton.className = 'cancel';
+            cancelButton.textContent = 'Batalkan';
+            cancelButton.addEventListener('click', () => cancelTask(task.id));
+            actions.appendChild(cancelButton);
+
+            card.append(details, actions);
+            taskList.appendChild(card);
+        });
+        createButton.disabled = true;
+        document.getElementById('createButtonText').innerHTML = 'MENUNGGU KFG<br>AMBIL TROLI';
+    }
+
+    if (socket) {
+        socket.on('DATA_ANTREAN_UPDATE', renderTasks);
+        socket.on('connect', () => {
+            document.getElementById('connectionStatus').textContent = 'Terhubung';
+            document.getElementById('connectionStatus').style.color = '#10b981';
+        });
+        socket.on('disconnect', () => {
+            document.getElementById('connectionStatus').textContent = 'Terputus';
+            document.getElementById('connectionStatus').style.color = '#ef4444';
+        });
+        socket.on('connect_error', error => {
+            console.error('Koneksi dashboard Helper BB gagal:', error.message);
+            document.getElementById('connectionStatus').textContent = 'Koneksi bermasalah';
+            document.getElementById('connectionStatus').style.color = '#ef4444';
+        });
+    } else {
+        document.getElementById('connectionStatus').textContent = 'Socket tidak tersedia';
+        document.getElementById('connectionStatus').style.color = '#ef4444';
+        showMessage('Koneksi real-time gagal dimuat. Muat ulang halaman atau hubungi admin.', 'error');
+    }
+</script>
+</body>
+</html>

@@ -893,14 +893,6 @@
         <div id="active-tasks" class="grid-shortcut"></div>
     </div>
 
-    <!-- QC Notification Popup -->
-    <div id="qcNotifPopup" style="display:none; position:fixed; right:24px; bottom:24px; background:linear-gradient(180deg, rgba(29, 78, 75, 0.95), rgba(15, 23, 42, 0.98)); border:1px solid rgba(16, 185, 129, 0.35); padding:18px; border-radius:12px; z-index:2000; width:340px; box-shadow: 0 12px 30px rgba(0,0,0,0.3);">
-        <div style="font-weight:900; font-size:16px; margin-bottom:8px; color:#ecfccb;">Notifikasi FG Full Masuk</div>
-        <div id="qcNotifText" style="color:#cbd5e1; margin-bottom:12px;">FG Full menunggu QC Release.</div>
-        <div style="color:#94a3b8; font-size:11px; line-height:1.5; margin-bottom:12px;">Aktifkan alarm dan izinkan notifikasi browser agar tetap mendapat Web Push saat halaman DHS ditutup. Pengingat diulang tiap 10 menit sampai QC Release.</div>
-        <button onclick="showSection('qc-panel')" style="background:#10b981; color:white; border:0; border-radius:9px; padding:9px 12px; font-weight:800; cursor:pointer;">Buka QC Release</button>
-    </div>
-
     <div id="qc-panel" class="section">
         <h3 style="margin-top:0;">QC Release Control</h3>
         <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:18px;">
@@ -1358,6 +1350,7 @@
     }
 
     function getMediaText(jenisMedia) {
+        if (jenisMedia === 'BB_TROLI_KOSONG') return '📦 Troli BB Kosong';
         if (jenisMedia === 'TROLI_BESAR') return '📦 PALLET WAREHOUSE';
         if (jenisMedia === 'TROLI_KECIL') return '🛒 Pallet Kayu';
         return '🚨 Kirim FG Full';
@@ -1517,6 +1510,20 @@
         return Uint8Array.from(rawData, character => character.charCodeAt(0));
     }
 
+    function subscriptionUsesApplicationServerKey(subscription, publicKey) {
+        const key = subscription.options.applicationServerKey;
+        const currentKey = key instanceof ArrayBuffer
+            ? new Uint8Array(key)
+            : ArrayBuffer.isView(key)
+                ? new Uint8Array(key.buffer, key.byteOffset, key.byteLength)
+                : null;
+        const expectedKey = urlBase64ToUint8Array(publicKey);
+
+        return currentKey !== null &&
+            currentKey.length === expectedKey.length &&
+            currentKey.every((value, index) => value === expectedKey[index]);
+    }
+
     async function enableWebPushNotifications() {
         if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
             return { enabled: false, message: 'Browser ini belum mendukung Web Push.' };
@@ -1526,9 +1533,13 @@
         }
 
         const keyResponse = await fetch(`${API_BASE}/api/push/public-key`);
-        const keyPayload = await keyResponse.json();
+        const keyPayload = await keyResponse.json().catch(() => ({}));
         if (!keyResponse.ok || !keyPayload.success || !keyPayload.publicKey) {
-            throw new Error(keyPayload.message || 'Server belum dikonfigurasi untuk Web Push.');
+            const message = keyPayload.message ||
+                (keyResponse.status === 404
+                    ? 'Backend hosting belum menyediakan endpoint Web Push. Deploy ulang backend DHS.'
+                    : `Gagal mengambil konfigurasi Web Push (HTTP ${keyResponse.status}).`);
+            throw new Error(message);
         }
 
         let permission = Notification.permission;
@@ -1540,6 +1551,13 @@
         await navigator.serviceWorker.register(new URL('service-worker.js', window.location.href));
         const registration = await navigator.serviceWorker.ready;
         let subscription = await registration.pushManager.getSubscription();
+        if (subscription && !subscriptionUsesApplicationServerKey(subscription, keyPayload.publicKey)) {
+            const unsubscribed = await subscription.unsubscribe();
+            if (!unsubscribed) {
+                throw new Error('Subscription Web Push lama gagal diperbarui. Coba muat ulang halaman lalu aktifkan kembali.');
+            }
+            subscription = null;
+        }
         if (!subscription) {
             subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
@@ -1552,9 +1570,13 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ subscription: subscription.toJSON() })
         });
-        const subscribePayload = await subscribeResponse.json();
+        const subscribePayload = await subscribeResponse.json().catch(() => ({}));
         if (!subscribeResponse.ok || !subscribePayload.success) {
-            throw new Error(subscribePayload.message || 'Subscription Web Push gagal disimpan.');
+            const message = subscribePayload.message ||
+                (subscribeResponse.status === 404
+                    ? 'Backend hosting belum menyediakan endpoint Web Push. Deploy ulang backend DHS.'
+                    : `Subscription Web Push gagal disimpan (HTTP ${subscribeResponse.status}).`);
+            throw new Error(message);
         }
 
         localStorage.setItem('dhs_web_push_enabled', 'true');
@@ -1696,18 +1718,11 @@
         });
         waitingTasks.forEach(task => pendingQcRequestIds.add(task.id));
 
-        const popup = document.getElementById('qcNotifPopup');
-        const txt = document.getElementById('qcNotifText');
         if (pendingQcRequestIds.size === 0) {
-            popup.style.display = 'none';
             stopQcAlarm();
             return;
         }
 
-        txt.innerText = waitingTasks.length === 1
-            ? `${waitingTasks[0].line} menunggu QC Release.`
-            : `${waitingTasks.length} tugas FG Full menunggu QC Release.`;
-        popup.style.display = 'block';
         if (newlyWaitingTasks.length) {
             newlyWaitingTasks.forEach(sendQcDesktopNotification);
             playQcAlarmBurst();

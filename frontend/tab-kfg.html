@@ -354,13 +354,25 @@ function toggleTheme() {
     }
 
     function getMediaVisual(jenis) {
+        if(jenis === 'BB_TROLI_KOSONG') return { svg: svgIcons.trolley, text: 'TROLI BB KOSONG' };
         if(jenis === 'TROLI_BESAR') return { svg: svgIcons.trolley, text: 'TROLI BESAR' };
         if(jenis === 'TROLI_KECIL') return { svg: svgIcons.pallet, text: 'Pallet Kayu' };
         return { svg: svgIcons.box, text: 'KIRIM FG FULL' };
     }
 
     function kirimTroliKeLift(id) { window.tutupPopupManual(); fetch(`${API_BASE}/api/request/kirim-troli`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) }); }
-    function selesaikanTugas(id) { window.tutupPopupManual(); fetch(`${API_BASE}/api/request/selesai`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) }); }
+    function selesaikanTugas(id, jenisMedia = null) {
+        window.tutupPopupManual();
+        const endpoint = jenisMedia === 'BB_TROLI_KOSONG' ? '/api/request/bb-empty/receive' : '/api/request/selesai';
+        fetch(`${API_BASE}${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+        }).then(async response => {
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || !result.success) throw new Error(result.message || 'Tugas gagal diselesaikan.');
+        }).catch(error => alert(error.message));
+    }
 
     socket.on('ANTREAN_BARU_MASUK', (data) => {
         try {
@@ -376,10 +388,18 @@ function toggleTheme() {
         const visual = getMediaVisual(data.jenisMedia);
         
         document.getElementById('popIconContainer').innerHTML = visual.svg;
-        document.getElementById('popFloorLine').innerText = `${data.line} (Lant. ${data.lantai})`;
+        document.getElementById('popFloorLine').innerText = data.jenisMedia === 'BB_TROLI_KOSONG'
+            ? 'PICKUP TROLI BB KOSONG'
+            : `${data.line} (Lant. ${data.lantai})`;
         document.getElementById('popMedia').innerText = visual.text;
 
-        if(data.jenisMedia === 'FG_FULL') {
+        if(data.jenisMedia === 'BB_TROLI_KOSONG') {
+            pb.className = "popup-box";
+            document.getElementById('pLabel').innerText = "📦 PICKUP TROLI KOSONG";
+            btn.className = "btn-wa-action";
+            btn.innerText = "SUDAH DIAMBIL";
+            btn.setAttribute('onclick', `selesaikanTugas('${data.id}', 'BB_TROLI_KOSONG')`);
+        } else if(data.jenisMedia === 'FG_FULL') {
             pb.className = "popup-box popup-fg"; document.getElementById('pLabel').innerText = "🚨 TARIK FG READY";
             btn.className = "btn-wa-action"; btn.innerText = "✓ SELESAI"; btn.setAttribute('onclick', `selesaikanTugas('${data.id}')`);
         } else {
@@ -415,7 +435,9 @@ function toggleTheme() {
             div.className = 'action-card';
             
             let htmlKanan = '';
-            if (item.lantai == 1) {
+            if (item.jenisMedia === 'BB_TROLI_KOSONG') {
+                htmlKanan = `<button class="btn-action btn-green" onclick="selesaikanTugas('${item.id}', 'BB_TROLI_KOSONG')">SUDAH DIAMBIL</button>`;
+            } else if (item.lantai == 1) {
                 htmlKanan = `<button class="btn-action btn-green" onclick="selesaikanTugas('${item.id}')">SELESAI</button>`;
             } else {
                 htmlKanan = item.status === 'DELIVERED' ? `<span class="lbl-status-delivered">DI LIFT 🛫</span>` : `<button class="btn-action btn-blue" onclick="kirimTroliKeLift('${item.id}')">KIRIM KE LIFT</button>`;
@@ -425,7 +447,7 @@ function toggleTheme() {
                 <div class="card-left">
                     <div class="mini-img-icon" style="color:#3b82f6;">${svgCode}</div>
                     <div>
-                        <h4>${lineName} <span style="font-size:11px; color:#38bdf8;">(Lant. ${item.lantai})</span></h4>
+                        <h4>${item.jenisMedia === 'BB_TROLI_KOSONG' ? 'PICKUP TROLI BB' : `${lineName} <span style="font-size:11px; color:#38bdf8;">(Lant. ${item.lantai})</span>`}</h4>
                         <p class="media-lbl">${visual.text || 'TROLI BESAR'}</p>
                     </div>
                 </div>

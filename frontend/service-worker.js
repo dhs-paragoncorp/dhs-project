@@ -13,8 +13,8 @@ self.addEventListener('push', event => {
 
     event.waitUntil(self.registration.showNotification(title, {
         body: payload.body || 'Ada pembaruan pada antrean produksi.',
-        tag: `dhs-qc-${taskId}`,
-        renotify: true,
+        tag: payload.tag || `dhs-qc-${taskId}`,
+        renotify: payload.renotify !== false,
         requireInteraction: true,
         data: { url: targetUrl.href }
     }));

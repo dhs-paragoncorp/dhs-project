@@ -274,6 +274,7 @@
         const passVal = document.getElementById('password').value;
         const rememberChecked = document.getElementById('rememberMe').checked;
         const errorBox = document.getElementById('errorBox');
+        const loginApiBase = 'https://dhs-project.onrender.com';
 
         errorBox.style.display = "none";
 
@@ -290,14 +291,17 @@
             localStorage.removeItem('dhs_remembered_user');
         }
 
-        fetch('https://dhs-project.onrender.com/api/auth/login', {
+        fetch(`${loginApiBase}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: userVal, password: passVal })
         })
         .then(res => {
             if (!res.ok) {
-                throw new Error("Akun tidak terdaftar atau password salah!");
+                if (res.status === 401) {
+                    throw new Error("Username atau password salah.");
+                }
+                throw new Error(`Server login bermasalah (HTTP ${res.status}).`);
             }
             return res.json();
         })
@@ -314,6 +318,12 @@
                     window.location.href = 'dashboard-kfg.html';
                 } else if (role === 'ADMIN') {
                     window.location.href = 'data-center.html';
+                } else if (role === 'HELPER_BB') {
+                    window.location.href = 'helper-bb.html';
+                } else {
+                    localStorage.removeItem('dhs_user');
+                    errorBox.innerText = "Role akun belum memiliki halaman tujuan. Hubungi admin.";
+                    errorBox.style.display = "block";
                 }
             } else {
                 errorBox.innerText = "Gagal memproses hak akses login!";
