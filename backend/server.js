@@ -94,6 +94,40 @@ expressApp.post('/api/push/operator-subscribe', (req, res) => {
     return res.status(201).json({ success: true });
 });
 
+expressApp.post('/api/push/qc-subscribe', (req, res) => {
+    if (!pushConfigured) {
+        return res.status(503).json({ success: false, message: 'Konfigurasi Web Push belum tersedia di server.' });
+    }
+
+    const subscription = req.body?.subscription;
+    const username = String(req.body?.username || '').trim().toLowerCase();
+    const userRecord = MASTER_USER_DB[username];
+    const floor = Number(userRecord?.lantai);
+    if (!isValidPushSubscription(subscription) || !userRecord ||
+        userRecord.role !== 'QC' || ![1, 2].includes(floor)) {
+        return res.status(400).json({ success: false, message: 'Subscription atau akun QC tidak valid.' });
+    }
+
+    const qcSubscription = { ...subscription, pushRole: 'QC', pushFloor: floor };
+    const subscriptions = pushSubscriptions.filter(item => item.endpoint !== subscription.endpoint);
+    if (subscriptions.length >= MAX_PUSH_SUBSCRIPTIONS) {
+        return res.status(429).json({ success: false, message: 'Batas perangkat Web Push sudah tercapai.' });
+    }
+    subscriptions.push(qcSubscription);
+    try {
+        persistPushSubscriptions(subscriptions);
+        pushSubscriptions = subscriptions;
+    } catch (error) {
+        console.error('Gagal menyimpan subscription Web Push QC:', error.message);
+        return res.status(500).json({ success: false, message: 'Subscription Web Push QC gagal disimpan.' });
+    }
+
+    getWaitingQcTasks()
+        .filter(task => Number(task.lantai || resolveLineLantai(task.line)) === floor)
+        .forEach(task => void sendQcPushNotification(task, [qcSubscription]));
+    return res.status(201).json({ success: true });
+});
+
 expressApp.delete('/api/push/subscribe', (req, res) => {
     const endpoint = req.body?.endpoint;
     if (typeof endpoint !== 'string') {
@@ -249,7 +283,13 @@ function getWaitingQcTasks() {
 }
 
 async function sendQcPushNotification(task, subscriptions = pushSubscriptions) {
-    if (!pushConfigured || subscriptions.length === 0) return;
+    const taskFloor = Number(task.lantai || resolveLineLantai(task.line));
+    const targetSubscriptions = subscriptions.filter(subscription =>
+        subscription.pushRole === 'QC'
+            ? Number(subscription.pushFloor) === taskFloor
+            : !subscription.pushRole || subscription.pushRole === 'ADMIN'
+    );
+    if (!pushConfigured || targetSubscriptions.length === 0) return;
 
     const payload = JSON.stringify({
         title: 'FG Full menunggu QC Release',
@@ -257,7 +297,7 @@ async function sendQcPushNotification(task, subscriptions = pushSubscriptions) {
         taskId: task.id,
         url: 'data-center.html'
     });
-    const results = await Promise.allSettled(subscriptions.map(subscription =>
+    const results = await Promise.allSettled(targetSubscriptions.map(subscription =>
         webpush.sendNotification(subscription, payload, { TTL: 60, urgency: 'high' })
     ));
     const expiredEndpoints = [];
@@ -267,7 +307,7 @@ async function sendQcPushNotification(task, subscriptions = pushSubscriptions) {
             const statusCode = result.reason?.statusCode;
             console.error(`Gagal mengirim Web Push untuk task ${task.id}:`, result.reason?.message || result.reason);
             if (statusCode === 404 || statusCode === 410) {
-                expiredEndpoints.push(subscriptions[index].endpoint);
+                expiredEndpoints.push(targetSubscriptions[index].endpoint);
             }
         }
     });
@@ -352,7 +392,7 @@ const GOOGLE_SHEETS_WEB_APP_URL = process.env.GOOGLE_SHEETS_WEB_APP_URL ||
     'https://script.google.com/macros/s/AKfycbxoxixwY5QUu5BkYWGNSqfG7AkJSWRNkGzXyy68kuuLkKdCO_dPrh0x9DQXu6Wydxmdlg/exec';
 
 const lineLnt1 = ['STP 01','LIP 16','BTP 03','LIP 09','VSN 05','VMN 06','BRP 04','VMN 05','VSN 03','BRP 02','VAM 03','BRP 01','VMN 07'];
-const lineLnt2 = ['EMP 16','LIP 11','BTP 04','LIP 10','JRP 02','FOP 03','BTP 01','BTP 02','LIP 18','VAM 02','SBP 01','VMN 04','LIP 09','LIP 06','LIP 08','ALP 03','LIP 12','VSN 04','SPP 01','LIP 14','VMN 02'];
+const lineLnt2 = ['EMP 16','LIP 11','BTP 04','LIP 10','JRP 02','FOP 03','BTP 01','BTP 02','LIP 18','VAM 02','SBP 01','VMN 04','LIP 06','LIP 08','ALP 03','LIP 12','VSN 04','SPP 01','LIP 14','VMN 02'];
 
 // Helper untuk format Tanggal dan Jam Lengkap (WIB Lokal)
 function getFormattedTimestamp() {

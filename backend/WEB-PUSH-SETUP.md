@@ -33,3 +33,16 @@ Each new FG Full sends a push immediately. If it is still waiting for QC Release
 ## Helper BB dashboard
 
 Open `frontend/helper-bb.html` directly; it does not require a Helper BB login. Helper BB presses the pickup button when an empty BB trolley needs collecting. KFG gets a real-time dashboard alert and sound, then confirms when the trolley has been collected. Only one pickup request can be active at a time, and Helper BB can cancel it before KFG collects it. This flow is separate from QC and does not require browser push permission.
+
+## QC floor accounts
+
+To keep QC alarms separated by floor, add two accounts to the existing `USERS_JSON` environment variable. Use private passwords of your choice and retain all existing account records:
+
+```json
+{
+  "qc_lantai1": { "password": "choose-a-private-password", "role": "QC", "lantai": 1 },
+  "qc_lantai2": { "password": "choose-another-private-password", "role": "QC", "lantai": 2 }
+}
+```
+
+Each QC account opens the Data Center QC Release panel for its assigned floor only; its line buttons, active QC tasks, and sound alarm are scoped to that floor. Admin accounts continue to see all floors.
