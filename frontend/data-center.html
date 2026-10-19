@@ -823,9 +823,9 @@
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="tutupSidebar()"></div>
 <div class="sidebar-drawer" id="sidebarDrawer">
     <div class="sidebar-header">⚙️ DHS COMMAND CENTER</div>
-    <button class="nav-btn" onclick="showSection('home')">🏠 Dashboard Aktif</button>
-    <button class="nav-btn" onclick="showSection('qc-panel')">📦 QC Release Control</button>
-    <button class="nav-btn" onclick="showSection('history')">📜 History Log</button>
+    <button class="nav-btn" id="navHomeButton" onclick="showSection('home')">🏠 Dashboard Aktif</button>
+    <button class="nav-btn" id="navQcButton" onclick="showSection('qc-panel')">📦 QC Release Control</button>
+    <button class="nav-btn" id="navHistoryButton" onclick="showSection('history')">📜 History Log</button>
     
     <!-- Tombol Refresh Halaman Manual -->
     <button class="nav-btn" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; border-color: rgba(14, 165, 233, 0.3);" onclick="window.location.reload()">🔄 Refresh Halaman</button>
@@ -898,9 +898,10 @@
         <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:18px;">
             <div id="qcReleaseCount" style="color:#94a3b8; font-size:14px;">0 tugas WAIT_KFG</div>
         </div>
-        <div id="qc-lines" class="grid-shortcut"></div>
         <h4 style="margin: 24px 0 8px 0; color: #94a3b8; font-size: 14px;">Tugas dalam Proses / Waiting KFG</h4>
         <div id="qc-active-tasks" class="grid-shortcut"></div>
+        <h4 style="margin: 24px 0 8px 0; color: #94a3b8; font-size: 14px;">Panel Line QC</h4>
+        <div id="qc-lines" class="grid-shortcut"></div>
     </div>
 
     <div id="history" class="section">
@@ -939,8 +940,23 @@
         console.error('Data sesi login tidak valid:', error);
         localStorage.removeItem('dhs_user');
     }
-    if (!sessionUser || sessionUser.role !== 'ADMIN') {
+    if (!sessionUser || !['ADMIN', 'QC'].includes(sessionUser.role)) {
         window.location.replace('login.html');
+    }
+    const qcFloor = sessionUser?.role === 'QC' ? Number(sessionUser.lantai) : null;
+    if (sessionUser?.role === 'QC') {
+        if (![1, 2].includes(qcFloor)) {
+            localStorage.removeItem('dhs_user');
+            window.location.replace('login.html');
+        } else {
+            document.getElementById('navHomeButton').style.display = 'none';
+            document.getElementById('navHistoryButton').style.display = 'none';
+            document.querySelector('#home').classList.remove('active');
+            document.querySelector('#history').classList.remove('active');
+            document.querySelector('#qc-panel').classList.add('active');
+            document.querySelector('#qc-panel > h3').innerText = `QC Release Control • Lantai ${qcFloor}`;
+            document.getElementById('enableAlarmButton').innerText = '🔔 Aktifkan Alarm Lantai ' + qcFloor;
+        }
     }
 
     const socket = typeof io === 'function' ? io(API_BASE, {
@@ -1101,6 +1117,7 @@
     }
 
     function showSection(id) {
+        if (sessionUser.role === 'QC' && id !== 'qc-panel') return;
         document.querySelectorAll('.section').forEach(section => {
             section.classList.toggle('active', section.id === id);
         });
@@ -1108,7 +1125,7 @@
     }
 
     const lineLnt1 = ['STP 01', 'LIP 16', 'BTP 03', 'VSN 05', 'VMN 06', 'BRP 04', 'VMN 05', 'VSN 03', 'BRP 02', 'VAM 03', 'BRP 01', 'VMN 07'];
-    const lineLnt2 = ['EMP 16', 'LIP 11', 'BTP 04', 'LIP 10', 'JRP 02', 'FOP 03', 'BTP 01', 'BTP 02', 'LIP 18', 'VAM 02', 'SBP 01', 'VMN 04', 'LIP 09', 'LIP 06', 'LIP 08', 'ALP 03', 'LIP 12', 'VSN 04', 'SPP 01', 'LIP 14', 'VMN 02'];
+    const lineLnt2 = ['EMP 16', 'LIP 11', 'BTP 04', 'LIP 10', 'JRP 02', 'FOP 03', 'BTP 01', 'BTP 02', 'LIP 18', 'VAM 02', 'SBP 01', 'VMN 04', 'LIP 06', 'LIP 08', 'ALP 03', 'LIP 12', 'VSN 04', 'SPP 01', 'LIP 14', 'VMN 02'];
 
     function getStatusClass(status) {
         if (status === 'WAIT_KFG') return 'status-waitkfg';
@@ -1125,8 +1142,16 @@
         return 1;
     }
 
+    function isTaskForCurrentQcFloor(task) {
+        return sessionUser.role !== 'QC' || Number(task.lantai || resolveLantaiFromLine(task.line)) === qcFloor;
+    }
+
     function requestQCRelease(line) {
         const normalizedLine = String(line).trim().toUpperCase();
+        if (sessionUser.role === 'QC' && resolveLantaiFromLine(normalizedLine) !== qcFloor) {
+            showStatusMessage(`Akun QC hanya dapat memproses line Lantai ${qcFloor}.`, 'error');
+            return;
+        }
         showStatusMessage(`Mencari task FG untuk line ${normalizedLine}...`, 'info');
         fetch(`${API_BASE}/api/request/status`, { method: 'GET' })
             .then(res => res.json())
@@ -1249,6 +1274,10 @@
     }
 
     function upsertTaskCard(data) {
+        if (!isTaskForCurrentQcFloor(data)) {
+            removeTaskCard(data.id);
+            return;
+        }
         activeTaskMap.set(data.id, data);
         updateTaskMetrics();
 
@@ -1265,7 +1294,7 @@
         }
 
         const isQcVisibleStatus = ['WAIT_QC', 'WAITING', 'WAIT_KFG'].includes(data.status);
-        if (isQcVisibleStatus && data.jenisMedia === 'FG_FULL') {
+        if (isQcVisibleStatus && data.jenisMedia === 'FG_FULL' && isTaskForCurrentQcFloor(data)) {
             qcContainer.querySelector('.empty-state')?.remove();
             const existingQcCard = document.getElementById(`qc-task-${data.id}`);
             const qcCardHtml = createTaskCardElement(data, 'qc-');
@@ -1297,7 +1326,8 @@
         const countLabel = document.getElementById('qcReleaseCount');
         container.innerHTML = '';
         qcContainer.innerHTML = '';
-        const items = [...(data.troli || []), ...(data.fg || [])];
+        const items = [...(data.troli || []), ...(data.fg || [])]
+            .filter(isTaskForCurrentQcFloor);
 
         syncQcNotifications(items);
 
@@ -1332,7 +1362,10 @@
     function generateQCButtons() {
         const container = document.getElementById('qc-lines');
         container.innerHTML = '';
-        [...lineLnt1, ...lineLnt2].forEach(line => {
+        const qcLines = sessionUser.role === 'QC'
+            ? (qcFloor === 1 ? lineLnt1 : lineLnt2)
+            : [...lineLnt1, ...lineLnt2];
+        qcLines.forEach(line => {
             const btn = document.createElement('button');
             btn.className = 'btn-line-side';
             btn.innerText = line;
@@ -1406,6 +1439,7 @@
         });
 
         socket.on('ANTREAN_BARU_MASUK', data => {
+            if (!isTaskForCurrentQcFloor(data)) return;
             upsertTaskCard(data);
             showStatusMessage(`Task baru diterima: ${data.line} (${data.status})`, 'info');
         });
@@ -1485,7 +1519,7 @@
         });
     }
 
-    const QC_ALARM_REPEAT_DELAY = 2 * 60 * 1000;
+    const QC_ALARM_REPEAT_DELAY = 10 * 60 * 1000;
     const QC_ALARM_BURST_DURATION = 10000;
     const pendingQcRequestIds = new Set();
     let qcAlarmEnabled = false;
@@ -1565,10 +1599,14 @@
             });
         }
 
-        const subscribeResponse = await fetch(`${API_BASE}/api/push/subscribe`, {
+        const isQcAccount = sessionUser.role === 'QC';
+        const subscribeEndpoint = isQcAccount ? '/api/push/qc-subscribe' : '/api/push/subscribe';
+        const subscribePayloadBody = { subscription: subscription.toJSON() };
+        if (isQcAccount) subscribePayloadBody.username = sessionUser.username;
+        const subscribeResponse = await fetch(`${API_BASE}${subscribeEndpoint}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ subscription: subscription.toJSON() })
+            body: JSON.stringify(subscribePayloadBody)
         });
         const subscribePayload = await subscribeResponse.json().catch(() => ({}));
         if (!subscribeResponse.ok || !subscribePayload.success) {
@@ -1581,7 +1619,12 @@
 
         localStorage.setItem('dhs_web_push_enabled', 'true');
         webPushNotificationsEnabled = true;
-        return { enabled: true, message: 'Web Push aktif; notifikasi dapat masuk saat halaman DHS ditutup.' };
+        return {
+            enabled: true,
+            message: isQcAccount
+                ? `Web Push aktif khusus QC Lantai ${qcFloor}.`
+                : 'Web Push aktif; notifikasi dapat masuk saat halaman DHS ditutup.'
+        };
     }
 
     async function enableAlarm() {

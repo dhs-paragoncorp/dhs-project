@@ -13,12 +13,12 @@
             --bg-body: #0b0f19; --bg-card: #131c2e; --border: #1e293b;
             --text-main: #f8fafc; --text-sub: #94a3b8; --sidebar-bg: #0f172a;
         }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; transition: 0.3s; box-sizing: border-box; }
-        .container { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 24px; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: clamp(8px, 2.5vw, 24px); display: flex; flex-direction: column; align-items: center; min-height: 100vh; transition: 0.3s; box-sizing: border-box; }
+        .container { width: min(100%, 960px); display: flex; flex-direction: column; gap: clamp(16px, 2.5vw, 24px); container-type: inline-size; }
 
         .factory-footer {
-            width: min(100%, 440px);
-            margin-top: 22px;
+            width: min(100%, 960px);
+            margin-top: clamp(16px, 2.5vw, 22px);
             border-radius: 14px;
             border: 1px solid var(--border);
             background: rgba(255,255,255,0.45);
@@ -32,23 +32,23 @@
         .factory-footer .footer-status { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; color: #0f766e; text-transform: uppercase; }
         .factory-footer .pulse-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #10b981; animation: pulse 1.8s infinite; }
         
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
-        .header-left { display: flex; align-items: center; gap: 12px; }
+        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+        .header-left { display: flex; align-items: center; gap: clamp(8px, 1.5vw, 12px); }
         .menu-toggle-btn { background: none; border: none; color: var(--text-main); font-size: 26px; cursor: pointer; padding: 0; }
-        .header h1 { margin: 0; font-size: 28px; font-weight: 900; color: #1e3a8a; }
+        .header h1 { margin: 0; font-size: clamp(24px, 3vw, 40px); font-weight: 900; color: #1e3a8a; }
         [data-theme="dark"] .header h1 { color: #ffffff; }
-        .header p { margin: 3px 0 0 0; font-size: 13px; color: var(--text-sub); font-weight: 600; }
+        .header p { margin: 3px 0 0 0; font-size: clamp(12px, 1.5vw, 16px); color: var(--text-sub); font-weight: 600; }
         
         .status-area { text-align: right; }
-        .line-badge { font-size: 20px; font-weight: 900; color: #2563eb; margin: 0; }
+        .line-badge { font-size: clamp(17px, 2.4vw, 30px); font-weight: 900; color: #2563eb; margin: 0; }
         .online-dot { font-size: 12px; color: #10b981; font-weight: 700; margin: 4px 0 0 0; }
-        .push-status { display: none; max-width: 230px; margin: 6px 0 0 auto; color: var(--text-sub); font-size: 10px; font-weight: 700; }
-        .push-status.show { display: block; }
+        .push-status { position: fixed; z-index: 1001; left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); width: max-content; max-width: min(420px, calc(100vw - 32px)); box-sizing: border-box; margin: 0; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-card); color: var(--text-sub); font-size: 13px; font-weight: 700; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.16); opacity: 0; visibility: hidden; transform: translate(-50%, 8px); transition: opacity 0.2s, transform 0.2s, visibility 0.2s; pointer-events: none; }
+        .push-status.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
         .push-status.error { color: #ef4444; }
         .push-status.success { color: #10b981; }
 
-        .sidebar-drawer { position: fixed; top: 0; left: -280px; width: 260px; height: 100vh; background-color: var(--sidebar-bg); border-right: 1px solid var(--border); box-shadow: 20px 0 50px rgba(0,0,0,0.3); z-index: 999; display: flex; flex-direction: column; padding: 30px 20px; box-sizing: border-box; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .sidebar-drawer.open { left: 0; }
+        .sidebar-drawer { position: fixed; top: 0; left: 0; width: min(260px, 85vw); height: 100vh; background-color: var(--sidebar-bg); border-right: 1px solid var(--border); box-shadow: 20px 0 50px rgba(0,0,0,0.3); z-index: 999; display: flex; flex-direction: column; padding: 30px 20px; box-sizing: border-box; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar-drawer.open { transform: translateX(0); }
         .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 998; display: none; }
         .sidebar-overlay.show { display: block; }
         .sidebar-header { font-size: 11px; font-weight: 800; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 25px; }
@@ -57,10 +57,10 @@
 
         .section-title { font-size: 16px; font-weight: 800; text-align: center; margin: 0; }
         .section-sub { font-size: 13px; color: var(--text-sub); text-align: center; margin: -15px 0 5px 0; font-weight: 600; }
-        .grid-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .grid-selector { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: clamp(8px, 1.5vw, 18px); }
         
-        .select-card { background: var(--bg-card); border: 2px solid var(--border); border-radius: 16px; padding: 20px 10px; text-align: center; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .select-card svg { width: 40px; height: 40px; fill: currentColor; }
+        .select-card { min-width: 0; background: var(--bg-card); border: 2px solid var(--border); border-radius: 16px; padding: clamp(14px, 2.5vw, 24px) 10px; text-align: center; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.7vw, 16px); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .select-card svg { width: clamp(34px, 5.8vw, 56px); height: clamp(34px, 5.8vw, 56px); fill: currentColor; }
         .select-card span { font-size: 12px; font-weight: 800; }
         
         .card-blue { color: #2563eb; border-color: rgba(37, 99, 235, 0.2); }
@@ -70,16 +70,16 @@
         .card-orange { color: #d97706; border-color: rgba(217, 119, 6, 0.2); }
         .card-orange:hover { background: rgba(217, 119, 6, 0.05); border-color: #d97706; }
 
-        .status-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .status-box { min-width: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: clamp(14px, 2.5vw, 24px); box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .status-title { font-size: 14px; font-weight: 800; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
         .empty-log { font-size: 13px; color: var(--text-sub); font-weight: 600; text-align: center; padding: 15px 0; }
         
-        .log-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .log-item { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--border); }
         .log-item:last-child { border-bottom: none; padding-bottom: 0; }
         .log-left { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 700; }
         .log-left svg { width: 18px; height: 18px; fill: currentColor; }
         
-        .log-right-action { display: flex; align-items: center; gap: 8px; }
+        .log-right-action { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
         .badge-status { font-size: 10px; font-weight: 800; padding: 5px 9px; border-radius: 6px; text-transform: uppercase; }
         .status-wait { background: rgba(217, 119, 6, 0.1); color: #d97706; }
         .status-deliv { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
@@ -115,6 +115,28 @@
             transition: 0.2s; 
         }
         .btn-instan-lnt1:hover { background: #475569; }
+
+        .status-panels { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(12px, 2vw, 18px); }
+        .log-left { min-width: 0; }
+        .log-right-action { min-width: 0; }
+        .factory-footer .footer-brand { min-width: 0; }
+        .factory-footer .footer-title { font-size: clamp(13px, 1.6vw, 15px); }
+        .factory-footer .footer-status { font-size: clamp(10px, 1.2vw, 11px); }
+
+        @container (min-width: 720px) {
+            .status-panels { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+        }
+
+        @media (max-width: 360px) {
+            .header { align-items: flex-start; }
+            .status-area { width: 100%; text-align: left; }
+            .push-status { margin-left: 0; }
+            .grid-selector { grid-template-columns: minmax(0, 1fr); }
+            .select-card { flex-direction: row; justify-content: flex-start; min-height: 64px; padding: 12px 16px; }
+            .select-card svg { width: 32px; height: 32px; }
+            .select-card span { text-align: left; }
+            .log-item { align-items: flex-start; }
+        }
     </style>
 </head>
 <body>
@@ -156,18 +178,20 @@
         </div>
     </div>
 
-    <div class="status-box">
-        <div class="status-title" id="lblStatusTitleText">Request Aktif Line Ini</div>
-        <div id="boxRequestAktif"><div class="empty-log">🟢 Jalur Aman. Tidak ada request menggantung.</div></div>
-    </div>
+    <div class="status-panels">
+        <div class="status-box">
+            <div class="status-title" id="lblStatusTitleText">Request Aktif Line Ini</div>
+            <div id="boxRequestAktif"><div class="empty-log">🟢 Jalur Aman. Tidak ada request menggantung.</div></div>
+        </div>
 
-    <div class="status-box">
-        <div class="status-title">Riwayat Aktivitas Terakhir</div>
-        <div id="boxRiwayatLokal"><div class="empty-log">Belum ada aktivitas terekam hari ini.</div></div>
+        <div class="status-box">
+            <div class="status-title">Riwayat Aktivitas Terakhir</div>
+            <div id="boxRiwayatLokal"><div class="empty-log">Belum ada aktivitas terekam hari ini.</div></div>
+        </div>
     </div>
 </div>
 
-<div id="notifPopup" style="display:none; position:fixed; left:50%; top:20%; transform:translateX(-50%); background:rgba(255,255,255,0.98); border:2px solid #0f172a; padding:18px; border-radius:12px; z-index:2000; box-shadow:0 8px 30px rgba(0,0,0,0.3); width:320px; text-align:center;">
+<div id="notifPopup" style="display:none; position:fixed; left:50%; top:20%; transform:translateX(-50%); background:rgba(255,255,255,0.98); border:2px solid #0f172a; padding:18px; border-radius:12px; z-index:2000; box-shadow:0 8px 30px rgba(0,0,0,0.3); width:min(320px, calc(100vw - 24px)); box-sizing:border-box; text-align:center;">
     <div style="font-weight:900; font-size:18px; margin-bottom:6px;">Troli Sudah Di Lift!</div>
     <div id="notifPopupText" style="color:#334155; margin-bottom:12px;">Silakan terima fisik di lift.</div>
     <div id="notifAudioStatus" style="color:#64748b; font-size:11px; font-weight:700; margin-bottom:10px;">Alarm akan berulang tiap 2 menit sampai dikonfirmasi.</div>
@@ -215,10 +239,18 @@
         ? 'http://localhost:3000'
         : 'https://dhs-project.onrender.com';
 
+    let pushStatusTimer;
+
     function showStatusMessage(message, type = '') {
         const status = document.getElementById('operatorPushStatus');
+        clearTimeout(pushStatusTimer);
         status.textContent = message;
         status.className = `push-status show ${type}`;
+        pushStatusTimer = setTimeout(() => {
+            status.classList.remove('show');
+            status.textContent = '';
+            status.classList.remove('success', 'error');
+        }, 5000);
     }
 
     function urlBase64ToUint8Array(base64String) {

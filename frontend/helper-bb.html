@@ -164,7 +164,7 @@
     <div class="sidebar-header">DHS HELPER BB</div>
     <button class="sidebar-menu-item" onclick="toggleTheme()">🌓 Ganti Tema</button>
     <div style="flex-grow:1;"></div>
-    <button class="sidebar-menu-item" onclick="window.location.href='login.html'">🚪 Login DHS</button>
+    <button class="sidebar-menu-item" onclick="keluarDashboard()">🚪 Log Out</button>
     <button class="sidebar-menu-item" onclick="tutupSidebar()">Tutup Menu</button>
 </div>
 <main>
@@ -223,6 +223,11 @@
     function tutupSidebar() {
         document.getElementById('sidebarDrawer').classList.remove('open');
         document.getElementById('sidebarOverlay').classList.remove('show');
+    }
+
+    function keluarDashboard() {
+        if (socket) socket.disconnect();
+        window.location.replace('login.html');
     }
 
     function toggleTheme() {
