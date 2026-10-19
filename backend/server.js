@@ -159,7 +159,11 @@ let MASTER_USER_DB = {};
 
 if (process.env.USERS_JSON) {
     try {
-        MASTER_USER_DB = JSON.parse(process.env.USERS_JSON);
+        const configuredUsers = JSON.parse(process.env.USERS_JSON);
+        if (!configuredUsers || typeof configuredUsers !== 'object' || Array.isArray(configuredUsers)) {
+            throw new Error('USERS_JSON harus berupa objek akun JSON.');
+        }
+        MASTER_USER_DB = configuredUsers;
     } catch (err) {
         console.error("Gagal membaca USERS_JSON dari Environment Variable:", err);
     }
@@ -517,6 +521,13 @@ function completeRequestById(id) {
 
 // API Login
 expressApp.post('/api/auth/login', (req, res) => {
+    if (Object.keys(MASTER_USER_DB).length === 0) {
+        return res.status(503).json({
+            success: false,
+            message: 'Akun login belum dikonfigurasi di server. Hubungi admin.'
+        });
+    }
+
     const { username, password } = req.body;
     const userKey = String(username).toLowerCase().trim();
     const userRecord = MASTER_USER_DB[userKey];
