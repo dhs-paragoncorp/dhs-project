@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const crypto = require('crypto');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
@@ -65,7 +66,11 @@ expressApp.post('/api/push/operator-subscribe', (req, res) => {
     const subscription = req.body?.subscription;
     const line = String(req.body?.line || '').trim().toUpperCase();
     const username = String(req.body?.username || '').trim().toLowerCase();
-    const knownLines = new Set([...lineLnt1, ...lineLnt2]);
+    const configuredOperatorLines = Object.values(MASTER_USER_DB)
+        .filter(user => user && user.role === 'OPERATOR' && [1, 2, 3].includes(Number(user.lantai)))
+        .map(user => String(user.line || '').trim().toUpperCase())
+        .filter(Boolean);
+    const knownLines = new Set([...lineFloorMappings.map(mapping => mapping.line), ...configuredOperatorLines]);
     const userRecord = MASTER_USER_DB[username];
     if (!isValidPushSubscription(subscription) || !knownLines.has(line) ||
         !userRecord || userRecord.role !== 'OPERATOR' ||
@@ -104,7 +109,7 @@ expressApp.post('/api/push/qc-subscribe', (req, res) => {
     const userRecord = MASTER_USER_DB[username];
     const floor = Number(userRecord?.lantai);
     if (!isValidPushSubscription(subscription) || !userRecord ||
-        userRecord.role !== 'QC' || ![1, 2].includes(floor)) {
+        userRecord.role !== 'QC' || ![1, 2, 3].includes(floor)) {
         return res.status(400).json({ success: false, message: 'Subscription atau akun QC tidak valid.' });
     }
 
@@ -156,6 +161,7 @@ const io = new Server(server, {
 
 // ==================== [DATABASE MASTER USER AMAN (DARI ENV)] ====================
 let MASTER_USER_DB = {};
+const authSessions = new Map();
 
 if (process.env.USERS_JSON) {
     try {
@@ -397,6 +403,101 @@ const GOOGLE_SHEETS_WEB_APP_URL = process.env.GOOGLE_SHEETS_WEB_APP_URL ||
 
 const lineLnt1 = ['STP 01','LIP 16','BTP 03','LIP 09','VSN 05','VMN 06','BRP 04','VMN 05','VSN 03','BRP 02','VAM 03','BRP 01','VMN 07'];
 const lineLnt2 = ['EMP 16','LIP 11','BTP 04','LIP 10','JRP 02','FOP 03','BTP 01','BTP 02','LIP 18','VAM 02','SBP 01','VMN 04','LIP 06','LIP 08','ALP 03','LIP 12','VSN 04','SPP 01','LIP 14','VMN 02'];
+const LINE_FLOOR_CONFIG_URL = process.env.LINE_FLOOR_CONFIG_URL;
+const LINE_FLOOR_CONFIG_SECRET = process.env.LINE_FLOOR_CONFIG_SECRET;
+const defaultLineFloorMappings = (() => {
+    const mappings = new Map();
+    lineLnt1.forEach(line => mappings.set(line, 1));
+    lineLnt2.forEach(line => mappings.set(line, 2));
+    Object.values(MASTER_USER_DB)
+        .filter(user => user && user.role === 'OPERATOR' && [1, 2, 3].includes(Number(user.lantai)))
+        .forEach(user => {
+            const line = String(user.line || '').trim().toUpperCase();
+            if (line) mappings.set(line, Number(user.lantai));
+        });
+    return [...mappings].map(([line, lantai]) => ({ line, lantai }));
+})();
+let lineFloorMappings = defaultLineFloorMappings;
+let lineFloorConfigStatus = 'not_configured';
+
+function validateLineFloorMappings(mappings) {
+    if (!Array.isArray(mappings) || mappings.length === 0 || mappings.length > 150) {
+        return { valid: false, message: 'Mapping harus berisi 1 sampai 150 line.' };
+    }
+
+    const normalized = [];
+    const seenLines = new Set();
+    for (const mapping of mappings) {
+        const line = String(mapping?.line || '').trim().toUpperCase();
+        const lantai = Number(mapping?.lantai);
+        if (!/^[A-Z0-9][A-Z0-9 ._-]{0,29}$/.test(line) || ![1, 2, 3].includes(lantai)) {
+            return { valid: false, message: 'Nama line atau lantai tidak valid. Lantai hanya 1, 2, atau 3.' };
+        }
+        if (seenLines.has(line)) {
+            return { valid: false, message: `Line ${line} tercantum lebih dari sekali.` };
+        }
+        seenLines.add(line);
+        normalized.push({ line, lantai });
+    }
+    return { valid: true, mappings: normalized };
+}
+
+async function callLineFloorConfig(action, mappings) {
+    if (!LINE_FLOOR_CONFIG_URL || !LINE_FLOOR_CONFIG_SECRET) {
+        throw new Error('LINE_FLOOR_CONFIG_URL dan LINE_FLOOR_CONFIG_SECRET belum diatur.');
+    }
+    if (LINE_FLOOR_CONFIG_SECRET.length < 32) {
+        throw new Error('LINE_FLOOR_CONFIG_SECRET harus minimal 32 karakter.');
+    }
+    const configUrl = new URL(LINE_FLOOR_CONFIG_URL);
+    if (configUrl.protocol !== 'https:' || configUrl.username || configUrl.password) {
+        throw new Error('LINE_FLOOR_CONFIG_URL harus menggunakan HTTPS tanpa kredensial URL.');
+    }
+    const response = await fetch(configUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, secret: LINE_FLOOR_CONFIG_SECRET, mappings }),
+        signal: AbortSignal.timeout(15000)
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload || payload.success !== true) {
+        throw new Error(payload?.message || `Apps Script returned HTTP ${response.status}`);
+    }
+    return payload;
+}
+
+async function loadLineFloorMappings() {
+    if (!LINE_FLOOR_CONFIG_URL || !LINE_FLOOR_CONFIG_SECRET) {
+        lineFloorConfigStatus = 'not_configured';
+        return false;
+    }
+    try {
+        const payload = await callLineFloorConfig('read');
+        if (!Array.isArray(payload.mappings)) {
+            throw new Error('Apps Script harus mengembalikan array mappings.');
+        }
+        if (payload.mappings.length === 0) {
+            const initialized = await callLineFloorConfig('save', defaultLineFloorMappings);
+            const result = validateLineFloorMappings(initialized.mappings);
+            if (!result.valid) throw new Error(result.message);
+            lineFloorMappings = result.mappings;
+        } else {
+            const result = validateLineFloorMappings(payload.mappings);
+            if (!result.valid) throw new Error(result.message);
+            lineFloorMappings = result.mappings;
+        }
+        lineFloorConfigStatus = 'connected';
+        io.emit('LINE_MAPPINGS_UPDATE', lineFloorMappings);
+        console.log(`Mapping line-lantai dimuat: ${lineFloorMappings.length} line.`);
+        return true;
+    } catch (error) {
+        lineFloorConfigStatus = 'error';
+        console.error('Gagal memuat mapping line-lantai:', error.message);
+        return false;
+    }
+}
+
+const lineFloorConfigLoadPromise = loadLineFloorMappings();
 
 // Helper untuk format Tanggal dan Jam Lengkap (WIB Lokal)
 function getFormattedTimestamp() {
@@ -409,6 +510,13 @@ function getFormattedTimestamp() {
 function resolveLineLantai(line) {
     if (!line) return 1;
     const normalized = String(line).trim().toUpperCase();
+    const mapping = lineFloorMappings.find(item => item.line === normalized);
+    if (mapping) return mapping.lantai;
+    const configuredOperator = Object.values(MASTER_USER_DB).find(user =>
+        user && user.role === 'OPERATOR' && String(user.line || '').trim().toUpperCase() === normalized
+    );
+    const configuredFloor = Number(configuredOperator?.lantai);
+    if ([1, 2, 3].includes(configuredFloor)) return configuredFloor;
     if (lineLnt1.includes(normalized)) return 1;
     if (lineLnt2.includes(normalized)) return 2;
     return 1;
@@ -519,6 +627,68 @@ function completeRequestById(id) {
     return dataSelesai;
 }
 
+function requireAdmin(req, res, next) {
+    const authorization = req.get('authorization') || '';
+    const token = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
+    const session = authSessions.get(token);
+    if (!session || session.expiresAt <= Date.now()) {
+        if (token) authSessions.delete(token);
+        return res.status(401).json({ success: false, message: 'Sesi login berakhir. Silakan login kembali.' });
+    }
+
+    const user = MASTER_USER_DB[session.username];
+    if (!user || user.role !== 'ADMIN') {
+        authSessions.delete(token);
+        return res.status(403).json({ success: false, message: 'Akses hanya untuk Admin.' });
+    }
+    return next();
+}
+
+expressApp.get('/api/line-mappings', async (req, res) => {
+    await lineFloorConfigLoadPromise;
+    if (lineFloorConfigStatus !== 'connected') await loadLineFloorMappings();
+    return res.json({
+        success: true,
+        data: lineFloorMappings,
+        persistent: lineFloorConfigStatus === 'connected',
+        message: lineFloorConfigStatus === 'connected'
+            ? 'Mapping tersimpan permanen.'
+            : 'Penyimpanan permanen belum tersambung. Mapping bawaan hanya sementara.'
+    });
+});
+
+expressApp.put('/api/admin/line-mappings', requireAdmin, async (req, res) => {
+    await lineFloorConfigLoadPromise;
+    if (lineFloorConfigStatus !== 'connected') await loadLineFloorMappings();
+    if (lineFloorConfigStatus !== 'connected') {
+        return res.status(503).json({
+            success: false,
+            message: 'Penyimpanan mapping belum tersambung. Periksa LINE_FLOOR_CONFIG_URL dan LINE_FLOOR_CONFIG_SECRET.'
+        });
+    }
+
+    const validation = validateLineFloorMappings(req.body?.mappings);
+    if (!validation.valid) {
+        return res.status(400).json({ success: false, message: validation.message });
+    }
+
+    try {
+        const payload = await callLineFloorConfig('save', validation.mappings);
+        const saved = validateLineFloorMappings(payload.mappings);
+        if (!saved.valid) {
+            throw new Error('Apps Script mengembalikan mapping yang tidak valid.');
+        }
+        lineFloorMappings = saved.mappings;
+        lineFloorConfigStatus = 'connected';
+        io.emit('LINE_MAPPINGS_UPDATE', lineFloorMappings);
+        return res.json({ success: true, data: lineFloorMappings, persistent: true });
+    } catch (error) {
+        console.error('Gagal menyimpan mapping line-lantai:', error.message);
+        lineFloorConfigStatus = 'error';
+        return res.status(502).json({ success: false, message: 'Mapping gagal disimpan permanen. Coba lagi setelah koneksi pulih.' });
+    }
+});
+
 // API Login
 expressApp.post('/api/auth/login', (req, res) => {
     if (Object.keys(MASTER_USER_DB).length === 0) {
@@ -528,14 +698,23 @@ expressApp.post('/api/auth/login', (req, res) => {
         });
     }
 
-    const { username, password } = req.body;
-    const userKey = String(username).toLowerCase().trim();
+    const { username, password } = req.body || {};
+    const userKey = String(username || '').toLowerCase().trim();
     const userRecord = MASTER_USER_DB[userKey];
     
     if (userRecord && userRecord.password === password) {
+        const data = { username: userKey, line: userRecord.line, lantai: userRecord.lantai, role: userRecord.role };
+        if (userRecord.role === 'ADMIN') {
+            for (const [existingToken, session] of authSessions) {
+                if (session.expiresAt <= Date.now()) authSessions.delete(existingToken);
+            }
+            const token = crypto.randomBytes(32).toString('hex');
+            authSessions.set(token, { username: userKey, expiresAt: Date.now() + 12 * 60 * 60 * 1000 });
+            data.token = token;
+        }
         return res.json({
             success: true,
-            data: { username: userKey, line: userRecord.line, lantai: userRecord.lantai, role: userRecord.role }
+            data
         });
     }
     return res.status(401).json({ success: false, message: "Username/Password salah!" });
@@ -556,10 +735,12 @@ expressApp.post('/api/request/reset-all', (req, res) => {
 });
 
 // API Request Baru (Operator Minta)
-expressApp.post('/api/request/baru', (req, res) => {
+expressApp.post('/api/request/baru', async (req, res) => {
+    await lineFloorConfigLoadPromise;
     const { line, lantai, jenisMedia, status } = req.body;
     const normalizedLine = String(line || '').trim().toUpperCase();
     const normalizedMedia = jenisMedia || 'TROLI_KECIL';
+    const mappedFloor = lineFloorMappings.find(mapping => mapping.line === normalizedLine)?.lantai;
     
     const waktuMintaStr = getFormattedTimestamp(); 
     const epochSekarang = Date.now();
@@ -567,7 +748,7 @@ expressApp.post('/api/request/baru', (req, res) => {
     const dataBaru = {
         id: Math.random().toString(36).substr(2, 9),
         line: normalizedLine,
-        lantai: typeof lantai === 'number' ? lantai : resolveLineLantai(line),
+        lantai: mappedFloor || (typeof lantai === 'number' ? lantai : resolveLineLantai(line)),
         jenisMedia: normalizedMedia,
         waktu: waktuMintaStr,        
         waktuEpoch: epochSekarang,    
@@ -736,6 +917,7 @@ expressApp.get('/api/current-shift', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || (process.env.RENDER ? '0.0.0.0' : '127.0.0.1');
 
 server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
@@ -746,9 +928,9 @@ server.on('error', (err) => {
     process.exit(1);
 });
 
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, HOST, () => {
     console.log(`=======================================================`);
     console.log(`🚀 DHS ENGINE V2.6 ONLINE - PRODUCTION GO-LIVE READY`);
-    console.log(`📡 Listening on port ${PORT}`);
+    console.log(`📡 Listening on http://${HOST}:${PORT}`);
     console.log(`=======================================================`);
 });

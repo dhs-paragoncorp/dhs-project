@@ -36,13 +36,14 @@ Open `frontend/helper-bb.html` directly; it does not require a Helper BB login. 
 
 ## QC floor accounts
 
-To keep QC alarms separated by floor, add two accounts to the existing `USERS_JSON` environment variable. Use private passwords of your choice and retain all existing account records:
+To keep QC alarms separated by floor, add one account per active floor to the existing `USERS_JSON` environment variable. Use private passwords of your choice and retain all existing account records:
 
 ```json
 {
   "qc_lantai1": { "password": "choose-a-private-password", "role": "QC", "lantai": 1 },
-  "qc_lantai2": { "password": "choose-another-private-password", "role": "QC", "lantai": 2 }
+  "qc_lantai2": { "password": "choose-another-private-password", "role": "QC", "lantai": 2 },
+  "qc_lantai3": { "password": "choose-a-third-private-password", "role": "QC", "lantai": 3 }
 }
 ```
 
-Each QC account opens the Data Center QC Release panel for its assigned floor only; its line buttons, active QC tasks, and sound alarm are scoped to that floor. Admin accounts continue to see all floors.
+For Lantai 3, also configure each operator account with its `line` and `"lantai": 3`; the server uses configured operator lines when resolving floor assignments. Each QC account opens the Data Center QC Release panel for its assigned floor only; its line buttons, active QC tasks, and sound alarm are scoped to that floor. Admin accounts continue to see all floors.
