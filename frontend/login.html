@@ -297,13 +297,12 @@
             body: JSON.stringify({ username: userVal, password: passVal })
         })
         .then(res => {
-            if (!res.ok) {
-                if (res.status === 401) {
-                    throw new Error("Username atau password salah.");
+            return res.json().then(resData => {
+                if (!res.ok) {
+                    throw new Error(resData.message || `Server login bermasalah (HTTP ${res.status}).`);
                 }
-                throw new Error(`Server login bermasalah (HTTP ${res.status}).`);
-            }
-            return res.json();
+                return resData;
+            });
         })
         .then(resData => {
             if (resData.success) {

@@ -235,9 +235,7 @@
         document.documentElement.setAttribute('data-theme', targetTheme);
         tutupSidebar();
     }
-    const API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-        ? 'http://localhost:3000'
-        : 'https://dhs-project.onrender.com';
+    const API_BASE = 'https://dhs-project.onrender.com';
 
     let pushStatusTimer;
 

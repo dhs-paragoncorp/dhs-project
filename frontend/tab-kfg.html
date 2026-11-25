@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DHS v1.0 • Dashboard KFG Handheld Premium</title>
     <script>
-        const TAB_KFG_API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-            ? 'http://localhost:3000'
-            : 'https://dhs-project.onrender.com';
+        const TAB_KFG_API_BASE = 'https://dhs-project.onrender.com';
         document.write(`<script src="${TAB_KFG_API_BASE}/socket.io/socket.io.js"><\/script>`);
     </script>
     <style>
@@ -341,9 +339,7 @@ function toggleTheme() {
     }
     function alarmMati() { if(alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; } if (alarmTimeout) { clearTimeout(alarmTimeout); alarmTimeout = null; } }
 
-    const API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-        ? 'http://localhost:3000'
-        : 'https://dhs-project.onrender.com';
+    const API_BASE = TAB_KFG_API_BASE;
     const socket = io(API_BASE);
 
     window.tutupPopupManual = function() { 
